@@ -12,13 +12,17 @@
       <p>Email: {{ payslip.email }}</p>
       <p>Salary: {{ payslip.salary }}</p>
     </div>
+    <PayslipModal /> 
   </div>
 </template>
 
 <script>
 import { calculateSalary, generatePayslip } from '@/utils/payrollCalculations';
-
+import PayslipModal from '@/components/common/PayslipModal.vue';
 export default {
+  components:{
+    PayslipModal
+  },
   data() {
     return {
       hoursWorked: 0,
