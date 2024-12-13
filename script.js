@@ -5,7 +5,7 @@ const initDataFromJSON = async () => {
   
     // Add admin credentials
     if (!users.some(u => u.role === 'admin')) {
-      users.push({ role: "admin", password: "lynnecptNY05!021", username: "SivuyileMtwetwe" });
+   ;
       localStorage.setItem('users', JSON.stringify(users));
     }
   
