@@ -272,8 +272,7 @@ const PayrollManagement = {
           </thead>
           <tbody>
             <tr v-for="employee in employees" :key="employee.employeeId">
-              <template v-for="request in employee.leaveRequests">
-                <tr :key="request.date">
+              <template v-for="request in employee.leaveRequests" :key="request.date">
                   <td>{{ employee.name }}</td>
                   <td>{{ request.date }}</td>
                   <td>{{ request.reason }}</td>
@@ -284,7 +283,7 @@ const PayrollManagement = {
                     <button v-if="request.status === 'Pending'" 
                       @click="rejectTimeOff(employee.employeeId, request)" class="btn btn-danger btn-sm">Reject</button>
                   </td>
-                </tr>
+                </>
               </template>
             </tr>
           </tbody>
@@ -430,6 +429,92 @@ const EmployeeDashboard = {
     `,
   };
   
+  const Sidebar = {
+    props: ['user'],
+    methods: {
+      logout() {
+        localStorage.removeItem('loggedInUser');
+        this.$router.push('/');
+      },
+    },
+    template: `
+      <div class="d-flex flex-column flex-shrink-0 p-3 bg-light" style="width: 250px; height: 100vh;">
+        <h5 class="mb-3">ModernTech HR</h5>
+        <ul class="nav nav-pills flex-column mb-auto">
+          <!-- Admin Links -->
+          <li v-if="user.role === 'admin'">
+            <router-link to="/admin-dashboard" class="nav-link">Dashboard</router-link>
+          </li>
+          <li v-if="user.role === 'admin'">
+            <router-link to="/employees" class="nav-link">Employees</router-link>
+          </li>
+          <li v-if="user.role === 'admin'">
+            <router-link to="/time-off" class="nav-link">Time Off Requests</router-link>
+          </li>
+          <li v-if="user.role === 'admin'">
+            <router-link to="/attendance" class="nav-link">Attendance</router-link>
+          </li>
+          <li v-if="user.role === 'admin'">
+            <router-link to="/payroll" class="nav-link">Payroll</router-link>
+          </li>
+  
+          <!-- Employee Links -->
+          <li v-if="user.role === 'employee'">
+            <router-link to="/employee-dashboard" class="nav-link">Dashboard</router-link>
+          </li>
+        </ul>
+        <hr />
+        <button class="btn btn-danger w-100" @click="logout">Logout</button>
+      </div>
+    `,
+  };
+  
+  const Navbar = {
+  props: ['user'], // Pass the logged-in user as a prop
+  methods: {
+    logout() {
+      localStorage.removeItem('loggedInUser');
+      this.$router.push('/');
+    },
+  },
+  template: `
+    <nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="#">ModernTech HR</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav me-auto">
+            <!-- Admin Links -->
+            <li class="nav-item" v-if="user.role === 'admin'">
+              <router-link to="/admin-dashboard" class="nav-link">Dashboard</router-link>
+            </li>
+            <li class="nav-item" v-if="user.role === 'admin'">
+              <router-link to="/employees" class="nav-link">Employees</router-link>
+            </li>
+            <li class="nav-item" v-if="user.role === 'admin'">
+              <router-link to="/time-off" class="nav-link">Time Off Requests</router-link>
+            </li>
+            <li class="nav-item" v-if="user.role === 'admin'">
+              <router-link to="/attendance" class="nav-link">Attendance</router-link>
+            </li>
+            <li class="nav-item" v-if="user.role === 'admin'">
+              <router-link to="/payroll" class="nav-link">Payroll</router-link>
+            </li>
+
+            <!-- Employee Links -->
+            <li class="nav-item" v-if="user.role === 'employee'">
+              <router-link to="/employee-dashboard" class="nav-link">Dashboard</router-link>
+            </li>
+          </ul>
+          <button class="btn btn-danger" @click="logout">Logout</button>
+        </div>
+      </div>
+    </nav>
+  `,
+};
+
     
 
 // Router Configuration
@@ -437,11 +522,11 @@ const routes = [
     { path: '/', component: Login },
     { path: '/employees', component: EmployeeManagement, meta: { role: 'admin' } },
     { path: '/payroll', component: PayrollManagement, meta: { role: 'admin' } },
-    { path: '/time-off', component: TimeOffRequests, meta: { role: 'admin' } },
+    { path: '/time-off', component: AdminDashboard, meta: { role: 'admin' } },
     { path: '/attendance', component: AttendanceTracking, meta: { role: 'admin' } },
     { path: '/visualization', component: DataVisualization, meta: { role: 'admin' } },
     { path: '/employee-dashboard', component: EmployeeDashboard, meta: { role: 'employee' } },
-    { path: '/admin-dashboard', component: AdminDashboard, meta: { role: 'admin' } }
+    // { path: '/admin-dashboard', component: AdminDashboard, meta: { role: 'admin' } }
   ];
   
   const router = VueRouter.createRouter({
@@ -462,19 +547,31 @@ router.beforeEach((to, from, next) => {
 // Vue App
 const app = Vue.createApp({
     data() {
-        return { user: JSON.parse(localStorage.getItem('loggedInUser') || '{}') };
+      return { user: JSON.parse(localStorage.getItem('loggedInUser') || '{}') };
+    },
+    components: {
+      Navbar,
+      Sidebar, // Optional if you want a sidebar instead of a navbar
     },
     methods: {
-        logout() {
-            localStorage.removeItem('loggedInUser');
-            this.user = {};
-            this.$router.push('/');
-        }
+      logout() {
+        localStorage.removeItem('loggedInUser');
+        this.user = {};
+        this.$router.push('/');
+      },
     },
     mounted() {
-        initDataFromJSON(); // Initialize data from JSON
-    }
-});
+      initDataFromJSON(); // Initialize data from JSON
+    },
+    template: `
+      <div>
+        <Navbar v-if="user.username" :user="user" />
+        <!-- Sidebar can replace Navbar if needed -->
+        <router-view></router-view>
+      </div>
+    `,
+  });
+  
 
 // Use Router
 app.use(router);
