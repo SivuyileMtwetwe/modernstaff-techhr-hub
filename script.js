@@ -2,75 +2,299 @@
 const initDataFromJSON = async () => {
     const users = JSON.parse(localStorage.getItem('users') || '[]');
     const employees = JSON.parse(localStorage.getItem('employees') || '[]');
-
-    // If employees already exist in localStorage, skip loading from JSON
-    if (employees.length > 0) {
-        return;
+  
+    // Add admin credentials
+    if (!users.some(u => u.role === 'admin')) {
+      users.push({ role: "admin", password: "lynnecptNY05!021", username: "SivuyileMtwetwe" });
+      localStorage.setItem('users', JSON.stringify(users));
     }
-
+  
+    // Skip loading from JSON if employees already exist
+    if (employees.length > 0) return;
+  
     try {
-        const response = await fetch('data/employeeData.json'); // Replace with the actual path to your JSON file
-        if (!response.ok) {
-            throw new Error(`Failed to fetch employee data: ${response.status}`);
-        }
-
-        const data = await response.json();
-        const loadedEmployees = data.employeeData.map(employee => {
-            // Generate username and password for each employee
-            const username = employee.name.toLowerCase().replace(/\s+/g, '.') + '.' + employee.employeeId;
-            const password = 'emp' + Math.floor(1000 + Math.random() * 9000);
-
-            // Add login credentials to users
-            users.push({ username, password, role: 'employee', employeeId: employee.employeeId });
-
-            // Attach generated credentials to the employee data
-            return { ...employee, username, password };
-        });
-
-        // Save to localStorage
-        localStorage.setItem('employees', JSON.stringify(loadedEmployees));
-        localStorage.setItem('users', JSON.stringify(users));
-
-        console.log('Employee data initialized from JSON.');
+      const response = await fetch('data/employeeData.json');
+      if (!response.ok) throw new Error(`Failed to fetch employee data: ${response.status}`);
+  
+      const data = await response.json();
+      const loadedEmployees = data.employeeData.map(employee => {
+        const username = employee.name.toLowerCase().replace(/\s+/g, '.') + '.' + employee.employeeId;
+        const password = 'emp' + Math.floor(1000 + Math.random() * 9000);
+        users.push({ username, password, role: 'employee', employeeId: employee.employeeId });
+  
+        return {
+          ...employee,
+          username,
+          password,
+          attendance: employee.attendance || [], // Initialize attendance if missing
+          leaveRequests: employee.leaveRequests || [], // Initialize leave requests if missing
+        };
+      });
+  
+      localStorage.setItem('employees', JSON.stringify(loadedEmployees));
+      localStorage.setItem('users', JSON.stringify(users));
+      console.log('Employee data initialized from JSON.');
     } catch (error) {
-        console.error('Error initializing employee data:', error);
+      console.error('Error initializing employee data:', error);
     }
-};
+  };
+  
 
 // Login Component
 const Login = {
     data() {
-        return { username: '', password: '', errorMessage: '' };
+      return { username: '', password: '', errorMessage: '' };
     },
     methods: {
-        login() {
-            const users = JSON.parse(localStorage.getItem('users') || '[]');
-            const user = users.find(u => u.username === this.username && u.password === this.password);
-
-            if (user) {
-                localStorage.setItem('loggedInUser', JSON.stringify(user));
-                this.$router.push(user.role === 'admin' ? '/employees' : '/employee-dashboard');
-            } else {
-                this.errorMessage = 'Invalid credentials';
-            }
+      login() {
+        const users = JSON.parse(localStorage.getItem('users') || '[]');
+        const user = users.find(u => u.username === this.username && u.password === this.password);
+  
+        if (user) {
+          localStorage.setItem('loggedInUser', JSON.stringify(user));
+          this.$router.push(user.role === 'admin' ? '/admin-dashboard' : '/employee-dashboard');
+        } else {
+          this.errorMessage = 'Invalid credentials';
         }
+      }
     },
     template: `
-        <div class="mt-5">
-            <h2>Login</h2>
-            <form @submit.prevent="login">
-                <div class="mb-3">
-                    <input v-model="username" type="text" placeholder="Username" class="form-control" required />
-                </div>
-                <div class="mb-3">
-                    <input v-model="password" type="password" placeholder="Password" class="form-control" required />
-                </div>
-                <button type="submit" class="btn btn-primary">Login</button>
-            </form>
-            <p class="text-danger mt-2">{{ errorMessage }}</p>
-        </div>
-    `
-};
+      <div class="mt-5">
+        <h2>Login</h2>
+        <form @submit.prevent="login">
+          <div class="mb-3">
+            <input v-model="username" type="text" placeholder="Username" class="form-control" required />
+          </div>
+          <div class="mb-3">
+            <input v-model="password" type="password" placeholder="Password" class="form-control" required />
+          </div>
+          <button type="submit" class="btn btn-primary">Login</button>
+        </form>
+        <p class="text-danger mt-2">{{ errorMessage }}</p>
+      </div>
+    `,
+  };
+  
+const PayrollManagement = {
+    data() {
+      return {
+        employees: JSON.parse(localStorage.getItem('employees') || '[]'),
+      };
+    },
+    methods: {
+      calculateGrossSalary(employee) {
+        return (employee.hoursWorked || 0) * (employee.hourlyRate || 0);
+      },
+    },
+    template: `
+      <div>
+        <h2>Payroll Management</h2>
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>Employee Name</th>
+              <th>Hours Worked</th>
+              <th>Hourly Rate</th>
+              <th>Gross Salary</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="employee in employees" :key="employee.employeeId">
+              <td>{{ employee.name }}</td>
+              <td><input type="number" v-model="employee.hoursWorked" class="form-control" /></td>
+              <td><input type="number" v-model="employee.hourlyRate" class="form-control" /></td>
+              <td>{{ calculateGrossSalary(employee) }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    `,
+  };
+  
+
+  const TimeOffRequests = {
+    data() {
+      return {
+        timeOffRequests: JSON.parse(localStorage.getItem('timeOffRequests') || '[]'),
+      };
+    },
+    methods: {
+      approveRequest(request) {
+        request.status = 'Approved';
+        this.saveRequests();
+      },
+      denyRequest(request) {
+        request.status = 'Denied';
+        this.saveRequests();
+      },
+      saveRequests() {
+        localStorage.setItem('timeOffRequests', JSON.stringify(this.timeOffRequests));
+      },
+    },
+    template: `
+      <div>
+        <h2>Time Off Requests</h2>
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>Employee Name</th>
+              <th>Request Date</th>
+              <th>Reason</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="request in timeOffRequests" :key="request.id">
+              <td>{{ request.employeeName }}</td>
+              <td>{{ request.date }}</td>
+              <td>{{ request.reason }}</td>
+              <td>{{ request.status }}</td>
+              <td>
+                <button @click="approveRequest(request)" class="btn btn-success btn-sm">Approve</button>
+                <button @click="denyRequest(request)" class="btn btn-danger btn-sm">Deny</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    `,
+  };
+  
+  const AttendanceTracking = {
+    data() {
+      return {
+        attendanceData: JSON.parse(localStorage.getItem('attendanceData') || '[]'),
+      };
+    },
+    methods: {
+      saveAttendance() {
+        localStorage.setItem('attendanceData', JSON.stringify(this.attendanceData));
+        alert('Attendance data saved successfully!');
+      },
+    },
+    template: `
+      <div>
+        <h2>Attendance Tracking</h2>
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>Employee Name</th>
+              <th>Date</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="attendance in attendanceData" :key="attendance.id">
+              <td>{{ attendance.employeeName }}</td>
+              <td>{{ attendance.date }}</td>
+              <td>
+                <select v-model="attendance.status" class="form-control">
+                  <option value="Present">Present</option>
+                  <option value="Absent">Absent</option>
+                </select>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <button @click="saveAttendance" class="btn btn-primary mt-3">Save Attendance</button>
+      </div>
+    `,
+  };
+  
+
+  const DataVisualization = {
+    mounted() {
+      const ctx = document.getElementById('attendanceChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['Present', 'Absent'],
+          datasets: [
+            {
+              label: '# of Days',
+              data: [20, 5], // Replace with dynamic data
+              backgroundColor: ['#4caf50', '#f44336'],
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: {
+              beginAtZero: true,
+            },
+          },
+        },
+      });
+    },
+    template: `
+      <div>
+        <h2>Attendance Report</h2>
+        <canvas id="attendanceChart"></canvas>
+      </div>
+    `,
+  };
+
+  const AdminDashboard = {
+    data() {
+      return {
+        employees: JSON.parse(localStorage.getItem('employees') || '[]'),
+      };
+    },
+    methods: {
+      approveTimeOff(employeeId, request) {
+        request.status = 'Approved';
+        this.saveEmployees();
+      },
+      rejectTimeOff(employeeId, request) {
+        request.status = 'Rejected';
+        this.saveEmployees();
+      },
+      saveEmployees() {
+        localStorage.setItem('employees', JSON.stringify(this.employees));
+      },
+    },
+    template: `
+      <div>
+        <h2>Admin Dashboard</h2>
+  
+        <h3>Time Off Requests</h3>
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>Employee Name</th>
+              <th>Date</th>
+              <th>Reason</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="employee in employees" :key="employee.employeeId">
+              <template v-for="request in employee.leaveRequests">
+                <tr :key="request.date">
+                  <td>{{ employee.name }}</td>
+                  <td>{{ request.date }}</td>
+                  <td>{{ request.reason }}</td>
+                  <td>{{ request.status }}</td>
+                  <td>
+                    <button v-if="request.status === 'Pending'" 
+                      @click="approveTimeOff(employee.employeeId, request)" class="btn btn-success btn-sm">Approve</button>
+                    <button v-if="request.status === 'Pending'" 
+                      @click="rejectTimeOff(employee.employeeId, request)" class="btn btn-danger btn-sm">Reject</button>
+                  </td>
+                </tr>
+              </template>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    `,
+  };
+  
+  
+  
 
 // Employee Management Component (Admin)
 const EmployeeManagement = {
@@ -135,16 +359,96 @@ const EmployeeManagement = {
     `
 };
 
+const EmployeeDashboard = {
+    data() {
+      return {
+        employee: {}, // Current logged-in employee
+        timeOffReason: '',
+        attendanceStatus: 'Present',
+      };
+    },
+    mounted() {
+      const user = JSON.parse(localStorage.getItem('loggedInUser'));
+      const employees = JSON.parse(localStorage.getItem('employees') || '[]');
+      this.employee = employees.find(emp => emp.employeeId === user.employeeId) || {};
+    },
+    methods: {
+      markAttendance() {
+        const today = new Date().toISOString().split('T')[0];
+        if (this.employee.attendance.some(att => att.date === today)) {
+          alert('Attendance for today is already marked.');
+          return;
+        }
+  
+        this.employee.attendance.push({ date: today, status: this.attendanceStatus });
+        this.saveEmployeeData();
+        alert('Attendance marked successfully!');
+      },
+      requestTimeOff() {
+        if (!this.timeOffReason) {
+          alert('Please provide a reason for the time-off request.');
+          return;
+        }
+  
+        this.employee.leaveRequests.push({
+          date: new Date().toISOString().split('T')[0],
+          reason: this.timeOffReason,
+          status: 'Pending',
+        });
+        this.saveEmployeeData();
+        alert('Time-off request submitted successfully!');
+        this.timeOffReason = '';
+      },
+      saveEmployeeData() {
+        const employees = JSON.parse(localStorage.getItem('employees') || '[]');
+        const index = employees.findIndex(emp => emp.employeeId === this.employee.employeeId);
+        if (index > -1) employees[index] = this.employee;
+        localStorage.setItem('employees', JSON.stringify(employees));
+      },
+    },
+    template: `
+      <div>
+        <h2>Welcome, {{ employee.name }}</h2>
+        <p><strong>Position:</strong> {{ employee.position }}</p>
+        <p><strong>Department:</strong> {{ employee.department }}</p>
+  
+        <div class="mt-4">
+          <h3>Mark Attendance</h3>
+          <select v-model="attendanceStatus" class="form-control">
+            <option value="Present">Present</option>
+            <option value="Absent">Absent</option>
+          </select>
+          <button @click="markAttendance" class="btn btn-primary mt-2">Mark Attendance</button>
+        </div>
+  
+        <div class="mt-4">
+          <h3>Request Time Off</h3>
+          <textarea v-model="timeOffReason" class="form-control" placeholder="Reason for time-off"></textarea>
+          <button @click="requestTimeOff" class="btn btn-primary mt-2">Submit Request</button>
+        </div>
+      </div>
+    `,
+  };
+  
+    
+
 // Router Configuration
 const routes = [
     { path: '/', component: Login },
-    { path: '/employees', component: EmployeeManagement, meta: { role: 'admin' } }
-];
-
-const router = VueRouter.createRouter({
+    { path: '/employees', component: EmployeeManagement, meta: { role: 'admin' } },
+    { path: '/payroll', component: PayrollManagement, meta: { role: 'admin' } },
+    { path: '/time-off', component: TimeOffRequests, meta: { role: 'admin' } },
+    { path: '/attendance', component: AttendanceTracking, meta: { role: 'admin' } },
+    { path: '/visualization', component: DataVisualization, meta: { role: 'admin' } },
+    { path: '/employee-dashboard', component: EmployeeDashboard, meta: { role: 'employee' } },
+    { path: '/admin-dashboard', component: AdminDashboard, meta: { role: 'admin' } }
+  ];
+  
+  const router = VueRouter.createRouter({
     history: VueRouter.createWebHashHistory(),
-    routes
-});
+    routes,
+  });
+  
 
 router.beforeEach((to, from, next) => {
     const user = JSON.parse(localStorage.getItem('loggedInUser') || '{}');
