@@ -456,7 +456,15 @@ const EmployeeDashboard = {
           </li>
           <li v-if="user.role === 'admin'">
             <router-link to="/payroll" class="nav-link">Payroll</router-link>
-          </li>
+         <li v-if="user.role === 'admin'>
+    <router-link to="/salary-visualization" class="nav-link">Salary Visualization</router-link>
+</li>
+<li v-if="user.role === 'admin'>
+    <router-link to="/attendance-trends" class="nav-link">Attendance Trends</router-link>
+</li >
+<li v-if="user.role === 'admin'>
+    <router-link to="/leave-status" class="nav-link">Leave Status</router-link>
+</li>
   
           <!-- Employee Links -->
           <li v-if="user.role === 'employee'">
@@ -515,6 +523,119 @@ const EmployeeDashboard = {
   `,
 };
 
+const LeaveStatusChart = {
+  mounted() {
+      const ctx = document.getElementById('leaveStatusChart').getContext('2d');
+      const employees = JSON.parse(localStorage.getItem('employees') || '[]');
+      const leaveStatuses = { Approved: 0, Pending: 0, Rejected: 0 };
+
+      employees.forEach(emp => {
+          emp.leaveRequests.forEach(req => {
+              leaveStatuses[req.status] += 1;
+          });
+      });
+
+      new Chart(ctx, {
+          type: 'pie',
+          data: {
+              labels: Object.keys(leaveStatuses),
+              datasets: [{
+                  data: Object.values(leaveStatuses),
+                  backgroundColor: ['#4caf50', '#ff9800', '#f44336']
+              }]
+          },
+          options: {
+              responsive: true
+          }
+      });
+  },
+  template: `
+      <div>
+          <h2>Leave Request Status</h2>
+          <canvas id="leaveStatusChart"></canvas>
+      </div>
+  `
+};
+
+const AttendanceTrendChart = {
+  mounted() {
+      const ctx = document.getElementById('attendanceTrendChart').getContext('2d');
+      const employees = JSON.parse(localStorage.getItem('employees') || '[]');
+      const attendanceCounts = { Present: 0, Absent: 0 };
+
+      employees.forEach(emp => {
+          emp.attendance.forEach(att => {
+              attendanceCounts[att.status] += 1;
+          });
+      });
+
+      new Chart(ctx, {
+          type: 'line',
+          data: {
+              labels: Object.keys(attendanceCounts),
+              datasets: [{
+                  label: 'Attendance Trend',
+                  data: Object.values(attendanceCounts),
+                  backgroundColor: 'rgba(75,192,192,0.4)',
+                  borderColor: 'rgba(75,192,192,1)',
+                  fill: true
+              }]
+          },
+          options: {
+              responsive: true,
+              scales: {
+                  y: {
+                      beginAtZero: true
+                  }
+              }
+          }
+      });
+  },
+  template: `
+      <div>
+          <h2>Attendance Trends</h2>
+          <canvas id="attendanceTrendChart"></canvas>
+      </div>
+  `
+};
+
+const SalaryChart = {
+  mounted() {
+      const ctx = document.getElementById('salaryChart').getContext('2d');
+      const employees = JSON.parse(localStorage.getItem('employees') || '[]');
+      const departments = employees.reduce((acc, emp) => {
+          acc[emp.department] = (acc[emp.department] || 0) + emp.salary;
+          return acc;
+      }, {});
+
+      new Chart(ctx, {
+          type: 'bar',
+          data: {
+              labels: Object.keys(departments),
+              datasets: [{
+                  label: 'Total Salary',
+                  data: Object.values(departments),
+                  backgroundColor: '#4caf50'
+              }]
+          },
+          options: {
+              responsive: true,
+              scales: {
+                  y: {
+                      beginAtZero: true
+                  }
+              }
+          }
+      });
+  },
+  template: `
+      <div>
+          <h2>Department-Wise Salary</h2>
+          <canvas id="salaryChart"></canvas>
+      </div>
+  `
+};
+
     
 
 // Router Configuration
@@ -526,6 +647,9 @@ const routes = [
     { path: '/attendance', component: AttendanceTracking, meta: { role: 'admin' } },
     { path: '/visualization', component: DataVisualization, meta: { role: 'admin' } },
     { path: '/employee-dashboard', component: EmployeeDashboard, meta: { role: 'employee' } },
+    { path: '/salary-visualization', component: SalaryChart },
+    { path: '/attendance-trends', component: AttendanceTrendChart },
+    { path: '/leave-status', component: LeaveStatusChart }
     // { path: '/admin-dashboard', component: AdminDashboard, meta: { role: 'admin' } }
   ];
   
