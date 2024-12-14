@@ -2,7 +2,7 @@
 const initDataFromJSON = async () => {
     const users = JSON.parse(localStorage.getItem('users') || '[]');
     const employees = JSON.parse(localStorage.getItem('employees') || '[]');
-    users.push({ role: "admin", password: "lynnecptNy05!021", username: "SivuyileMtwetwe" })
+    users.push({ role: "admin", password: "123admin!123", username: "HRAdmin" })
     // Add admin credentials
     if (!users.some(u => u.role === 'admin')) {
    ;
