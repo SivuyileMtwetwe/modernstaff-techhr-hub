@@ -52,7 +52,7 @@ const Login = {
   
         if (user) {
           localStorage.setItem('loggedInUser', JSON.stringify(user));
-          this.$router.push(user.role === 'admin' ? '/admin-dashboard' : '/employee-dashboard');
+          this.$router.push(user.role === 'admin' ? '/employees' : '/employee-dashboard');
         } else {
           this.errorMessage = 'Invalid credentials';
         }
