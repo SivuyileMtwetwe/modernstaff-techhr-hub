@@ -217,6 +217,10 @@ const EmployeeDashboard = {
         employee: {}, // Current logged-in employee
         timeOffReason: '',
         attendanceStatus: 'Present',
+        paySlipModal: false,
+        paySlipStartDate: '',
+        paySlipEndDate: '',
+        generatedPaySlip: null
       };
     },
     mounted() {
@@ -267,6 +271,103 @@ const EmployeeDashboard = {
         if (index > -1) employees[index] = this.employee;
         localStorage.setItem('employees', JSON.stringify(employees));
       },
+      generatePaySlip() {
+        // Validate date range
+        if (!this.paySlipStartDate || !this.paySlipEndDate) {
+          alert('Please select both start and end dates');
+          return;
+        }
+
+        const startDate = new Date(this.paySlipStartDate);
+        const endDate = new Date(this.paySlipEndDate);
+
+        // Calculate days worked
+        const attendanceInPeriod = this.employee.attendance.filter(att => {
+          const attDate = new Date(att.date);
+          return attDate >= startDate && attDate <= endDate && att.status === 'Present';
+        });
+
+        // Calculate working days
+        const workingDays = attendanceInPeriod.length;
+
+        // Calculate gross salary (assuming hourly rate)
+        const hourlyRate = this.employee.hourlyRate || 20; // Default hourly rate
+        const hoursWorked = workingDays * 8; // Assuming 8-hour workday
+        const grossSalary = hoursWorked * hourlyRate;
+
+        // Basic tax calculation (simplified)
+        const taxRate = 0.2; // 20% tax rate
+        const tax = grossSalary * taxRate;
+        const netSalary = grossSalary - tax;
+
+        // Generate pay slip
+        this.generatedPaySlip = {
+          employeeName: this.employee.name,
+          employeeId: this.employee.employeeId,
+          department: this.employee.department,
+          position: this.employee.position,
+          startDate: this.paySlipStartDate,
+          endDate: this.paySlipEndDate,
+          workingDays: workingDays,
+          hourlyRate: hourlyRate,
+          hoursWorked: hoursWorked,
+          grossSalary: grossSalary.toFixed(2),
+          taxRate: (taxRate * 100) + '%',
+          tax: tax.toFixed(2),
+          netSalary: netSalary.toFixed(2)
+        };
+
+        // Optional: Save pay slip to employee's records
+        if (!this.employee.paySlips) {
+          this.employee.paySlips = [];
+        }
+        this.employee.paySlips.push(this.generatedPaySlip);
+        this.saveEmployeeData();
+      },
+      printPaySlip() {
+        if (!this.generatedPaySlip) return;
+
+        const printContent = `
+          <html>
+            <head>
+              <title>Pay Slip</title>
+              <style>
+                body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; }
+                .pay-slip { border: 1px solid #ddd; padding: 20px; }
+                .header { text-align: center; border-bottom: 1px solid #ddd; padding-bottom: 10px; }
+                .details { margin-top: 20px; }
+                .details div { margin-bottom: 10px; }
+              </style>
+            </head>
+            <body>
+              <div class="pay-slip">
+                <div class="header">
+                  <h2>Pay Slip</h2>
+                  <p>Pay Period: ${this.generatedPaySlip.startDate} to ${this.generatedPaySlip.endDate}</p>
+                </div>
+                <div class="details">
+                  <div><strong>Name:</strong> ${this.generatedPaySlip.employeeName}</div>
+                  <div><strong>Employee ID:</strong> ${this.generatedPaySlip.employeeId}</div>
+                  <div><strong>Department:</strong> ${this.generatedPaySlip.department}</div>
+                  <div><strong>Position:</strong> ${this.generatedPaySlip.position}</div>
+                  <div><strong>Working Days:</strong> ${this.generatedPaySlip.workingDays}</div>
+                  <div><strong>Hourly Rate:</strong> $${this.generatedPaySlip.hourlyRate}</div>
+                  <div><strong>Hours Worked:</strong> ${this.generatedPaySlip.hoursWorked}</div>
+                  <div><strong>Gross Salary:</strong> $${this.generatedPaySlip.grossSalary}</div>
+                  <div><strong>Tax Rate:</strong> ${this.generatedPaySlip.taxRate}</div>
+                  <div><strong>Tax Amount:</strong> $${this.generatedPaySlip.tax}</div>
+                  <div><strong>Net Salary:</strong> $${this.generatedPaySlip.netSalary}</div>
+                </div>
+              </div>
+            </body>
+          </html>
+        `;
+
+        const printWindow = window.open('', '', 'height=500, width=500');
+        printWindow.document.write(printContent);
+        printWindow.document.close();
+        printWindow.print();
+      }
     },
     template: `
       <div>
@@ -287,6 +388,46 @@ const EmployeeDashboard = {
           <h3>Request Time Off</h3>
           <textarea v-model="timeOffReason" class="form-control" placeholder="Reason for time-off"></textarea>
           <button @click="requestTimeOff" class="btn btn-primary mt-2">Submit Request</button>
+        </div>
+
+        <div class="mt-4">
+          <h3>Generate Pay Slip</h3>
+          <div class="row">
+            <div class="col-md-6">
+              <label>Start Date</label>
+              <input type="date" v-model="paySlipStartDate" class="form-control">
+            </div>
+            <div class="col-md-6">
+              <label>End Date</label>
+              <input type="date" v-model="paySlipEndDate" class="form-control">
+            </div>
+          </div>
+          <button @click="generatePaySlip" class="btn btn-success mt-2">Generate Pay Slip</button>
+        </div>
+
+        <!-- Pay Slip Preview -->
+        <div v-if="generatedPaySlip" class="mt-4 card">
+          <div class="card-header">Pay Slip Preview</div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-6">
+                <strong>Name:</strong> {{ generatedPaySlip.employeeName }}
+              </div>
+              <div class="col-md-6">
+                <strong>Period:</strong> {{ generatedPaySlip.startDate }} to {{ generatedPaySlip.endDate }}
+              </div>
+              <div class="col-md-6">
+                <strong>Working Days:</strong> {{ generatedPaySlip.workingDays }}
+              </div>
+              <div class="col-md-6">
+                <strong>Gross Salary:</strong> {{ generatedPaySlip.grossSalary }}
+              </div>
+              <div class="col-md-6">
+                <strong>Net Salary:</strong> {{ generatedPaySlip.netSalary }}
+              </div>
+            </div>
+            <button @click="printPaySlip" class="btn btn-primary mt-3">Print Pay Slip</button>
+          </div>
         </div>
       </div>
     `,
