@@ -161,7 +161,7 @@ const PayrollManagement = {
     `,
   };
   
-  const AttendanceTracking = {
+const AttendanceTracking = {
     data() {
         return {
             attendanceData: JSON.parse(localStorage.getItem('attendanceData') || '[]'),
@@ -389,7 +389,18 @@ const EmployeeDashboard = {
 const EmployeeManagement = {
     data() {
         return {
-            employees: JSON.parse(localStorage.getItem('employees') || '[]')
+            employees: JSON.parse(localStorage.getItem('employees') || '[]'),
+            newEmployee: {
+                name: '',
+                position: '',
+                department: '',
+                salary: '',
+                employeeId: '',
+                username: '',
+                password: '',
+                attendance: [],
+                leaveRequests: []
+            }
         };
     },
     methods: {
@@ -409,15 +420,114 @@ const EmployeeManagement = {
             employee.password = password;
 
             // Save updated data to localStorage
-            localStorage.setItem('employees', JSON.stringify(this.employees));
-            localStorage.setItem('users', JSON.stringify(users));
+            this.saveEmployees(users);
 
             alert(`Credentials updated. New Password: ${password}`);
+        },
+        addEmployee() {
+            // Validate input
+            if (!this.newEmployee.name || !this.newEmployee.position || !this.newEmployee.department) {
+                alert('Please fill in all required fields');
+                return;
+            }
+
+            // Generate unique employee ID
+            const employeeId = Date.now().toString();
+            
+            // Generate username and password
+            const username = this.newEmployee.name.toLowerCase().replace(/\s+/g, '.') + '.' + employeeId;
+            const password = 'emp' + Math.floor(1000 + Math.random() * 9000);
+
+            // Create full employee object
+            const employeeToAdd = {
+                ...this.newEmployee,
+                employeeId,
+                username,
+                password,
+                attendance: [],
+                leaveRequests: []
+            };
+
+            // Add to employees array
+            this.employees.push(employeeToAdd);
+
+            // Add to users for login
+            const users = JSON.parse(localStorage.getItem('users') || '[]');
+            users.push({
+                username,
+                password,
+                role: 'employee',
+                employeeId
+            });
+
+            // Save to localStorage
+            this.saveEmployees(users);
+
+            // Reset form
+            this.newEmployee = {
+                name: '',
+                position: '',
+                department: '',
+                salary: '',
+                employeeId: '',
+                username: '',
+                password: ''
+            };
+
+            alert('Employee added successfully!');
+        },
+        deleteEmployee(employeeId) {
+            // Confirm deletion
+            if (!confirm('Are you sure you want to delete this employee?')) {
+                return;
+            }
+
+            // Remove from employees array
+            this.employees = this.employees.filter(emp => emp.employeeId !== employeeId);
+
+            // Remove from users array
+            const users = JSON.parse(localStorage.getItem('users') || '[]');
+            const updatedUsers = users.filter(user => user.employeeId !== employeeId);
+
+            // Save updated data to localStorage
+            this.saveEmployees(updatedUsers);
+
+            alert('Employee deleted successfully!');
+        },
+        saveEmployees(users) {
+            localStorage.setItem('employees', JSON.stringify(this.employees));
+            if (users) {
+                localStorage.setItem('users', JSON.stringify(users));
+            }
         }
     },
     template: `
         <div>
             <h2>Employee Management</h2>
+            
+            <!-- Add Employee Form -->
+            <div class="card mb-4">
+                <div class="card-header">Add New Employee</div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <input v-model="newEmployee.name" type="text" class="form-control" placeholder="Name" required>
+                        </div>
+                        <div class="col-md-3">
+                            <input v-model="newEmployee.position" type="text" class="form-control" placeholder="Position" required>
+                        </div>
+                        <div class="col-md-3">
+                            <input v-model="newEmployee.department" type="text" class="form-control" placeholder="Department" required>
+                        </div>
+                        <div class="col-md-3">
+                            <input v-model="newEmployee.salary" type="number" class="form-control" placeholder="Salary">
+                        </div>
+                    </div>
+                    <button @click="addEmployee" class="btn btn-primary mt-3">Add Employee</button>
+                </div>
+            </div>
+
+            <!-- Employees Table -->
             <table class="table table-striped">
                 <thead>
                     <tr>
@@ -426,7 +536,6 @@ const EmployeeManagement = {
                         <th>Department</th>
                         <th>Salary</th>
                         <th>Username</th>
-                        <th>Password</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -437,9 +546,9 @@ const EmployeeManagement = {
                         <td>{{ employee.department }}</td>
                         <td>{{ employee.salary }}</td>
                         <td>{{ employee.username }}</td>
-                        <td>{{ employee.password }}</td>
                         <td>
-                            <button @click="regenerateCredentials(employee)" class="btn btn-sm btn-warning">Reset Password</button>
+                            <button @click="regenerateCredentials(employee)" class="btn btn-sm btn-warning me-2">Reset Password</button>
+                            <button @click="deleteEmployee(employee.employeeId)" class="btn btn-sm btn-danger">Delete</button>
                         </td>
                     </tr>
                 </tbody>
