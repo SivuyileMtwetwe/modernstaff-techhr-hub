@@ -163,41 +163,131 @@ const PayrollManagement = {
   
   const AttendanceTracking = {
     data() {
-      return {
-        attendanceData: JSON.parse(localStorage.getItem('attendanceData') || '[]'),
-      };
+        return {
+            attendanceData: JSON.parse(localStorage.getItem('attendanceData') || '[]'),
+        };
     },
     methods: {
-      saveAttendance() {
-        localStorage.setItem('attendanceData', JSON.stringify(this.attendanceData));
-        alert('Attendance data saved successfully!');
+        saveAttendance() {
+            localStorage.setItem('attendanceData', JSON.stringify(this.attendanceData));
+            alert('Attendance data saved successfully!');
+        },
+        getAttendanceDetails() {
+            const employees = JSON.parse(localStorage.getItem('employees') || '[]');
+            const updatedAttendanceData = employees.flatMap(employee => 
+                employee.attendance.map(att => ({
+                    employeeName: employee.name,
+                    date: att.date,
+                    status: att.status
+                }))
+            );
+            this.attendanceData = updatedAttendanceData;
+            localStorage.setItem('attendanceData', JSON.stringify(updatedAttendanceData));
+        }
+    },
+    mounted() {
+        this.getAttendanceDetails();
+    },
+    template: `
+        <div>
+            <h2>Attendance Tracking</h2>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Employee Name</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="attendance in attendanceData" :key="attendance.date + '-' + attendance.employeeName">
+                        <td>{{ attendance.employeeName }}</td>
+                        <td>{{ attendance.date }}</td>
+                        <td>{{ attendance.status }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    `,
+};
+
+const EmployeeDashboard = {
+    data() {
+      return {
+        employee: {}, // Current logged-in employee
+        timeOffReason: '',
+        attendanceStatus: 'Present',
+      };
+    },
+    mounted() {
+      const user = JSON.parse(localStorage.getItem('loggedInUser'));
+      const employees = JSON.parse(localStorage.getItem('employees') || '[]');
+      this.employee = employees.find(emp => emp.employeeId === user.employeeId) || {};
+    },
+    methods: {
+      markAttendance() {
+        const today = new Date().toISOString().split('T')[0];
+        if (this.employee.attendance.some(att => att.date === today)) {
+          alert('Attendance for today is already marked.');
+          return;
+        }
+  
+        this.employee.attendance.push({ date: today, status: this.attendanceStatus });
+        this.saveEmployeeData();
+        
+        // Update attendance data in localStorage
+        const attendanceData = JSON.parse(localStorage.getItem('attendanceData') || '[]');
+        attendanceData.push({
+          employeeName: this.employee.name,
+          date: today,
+          status: this.attendanceStatus
+        });
+        localStorage.setItem('attendanceData', JSON.stringify(attendanceData));
+        
+        alert('Attendance marked successfully!');
+      },
+      requestTimeOff() {
+        if (!this.timeOffReason) {
+          alert('Please provide a reason for the time-off request.');
+          return;
+        }
+  
+        this.employee.leaveRequests.push({
+          date: new Date().toISOString().split('T')[0],
+          reason: this.timeOffReason,
+          status: 'Pending',
+        });
+        this.saveEmployeeData();
+        alert('Time-off request submitted successfully!');
+        this.timeOffReason = '';
+      },
+      saveEmployeeData() {
+        const employees = JSON.parse(localStorage.getItem('employees') || '[]');
+        const index = employees.findIndex(emp => emp.employeeId === this.employee.employeeId);
+        if (index > -1) employees[index] = this.employee;
+        localStorage.setItem('employees', JSON.stringify(employees));
       },
     },
     template: `
       <div>
-        <h2>Attendance Tracking</h2>
-        <table class="table table-striped">
-          <thead>
-            <tr>
-              <th>Employee Name</th>
-              <th>Date</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="attendance in attendanceData" :key="attendance.id">
-              <td>{{ attendance.employeeName }}</td>
-              <td>{{ attendance.date }}</td>
-              <td>
-                <select v-model="attendance.status" class="form-control">
-                  <option value="Present">Present</option>
-                  <option value="Absent">Absent</option>
-                </select>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        <button @click="saveAttendance" class="btn btn-primary mt-3">Save Attendance</button>
+        <h2>Welcome, {{ employee.name }}</h2>
+        <p><strong>Position:</strong> {{ employee.position }}</p>
+        <p><strong>Department:</strong> {{ employee.department }}</p>
+  
+        <div class="mt-4">
+          <h3>Mark Attendance</h3>
+          <select v-model="attendanceStatus" class="form-control">
+            <option value="Present">Present</option>
+            <option value="Absent">Absent</option>
+          </select>
+          <button @click="markAttendance" class="btn btn-primary mt-2">Mark Attendance</button>
+        </div>
+  
+        <div class="mt-4">
+          <h3>Request Time Off</h3>
+          <textarea v-model="timeOffReason" class="form-control" placeholder="Reason for time-off"></textarea>
+          <button @click="requestTimeOff" class="btn btn-primary mt-2">Submit Request</button>
+        </div>
       </div>
     `,
   };
@@ -358,76 +448,7 @@ const EmployeeManagement = {
     `
 };
 
-const EmployeeDashboard = {
-    data() {
-      return {
-        employee: {}, // Current logged-in employee
-        timeOffReason: '',
-        attendanceStatus: 'Present',
-      };
-    },
-    mounted() {
-      const user = JSON.parse(localStorage.getItem('loggedInUser'));
-      const employees = JSON.parse(localStorage.getItem('employees') || '[]');
-      this.employee = employees.find(emp => emp.employeeId === user.employeeId) || {};
-    },
-    methods: {
-      markAttendance() {
-        const today = new Date().toISOString().split('T')[0];
-        if (this.employee.attendance.some(att => att.date === today)) {
-          alert('Attendance for today is already marked.');
-          return;
-        }
-  
-        this.employee.attendance.push({ date: today, status: this.attendanceStatus });
-        this.saveEmployeeData();
-        alert('Attendance marked successfully!');
-      },
-      requestTimeOff() {
-        if (!this.timeOffReason) {
-          alert('Please provide a reason for the time-off request.');
-          return;
-        }
-  
-        this.employee.leaveRequests.push({
-          date: new Date().toISOString().split('T')[0],
-          reason: this.timeOffReason,
-          status: 'Pending',
-        });
-        this.saveEmployeeData();
-        alert('Time-off request submitted successfully!');
-        this.timeOffReason = '';
-      },
-      saveEmployeeData() {
-        const employees = JSON.parse(localStorage.getItem('employees') || '[]');
-        const index = employees.findIndex(emp => emp.employeeId === this.employee.employeeId);
-        if (index > -1) employees[index] = this.employee;
-        localStorage.setItem('employees', JSON.stringify(employees));
-      },
-    },
-    template: `
-      <div>
-        <h2>Welcome, {{ employee.name }}</h2>
-        <p><strong>Position:</strong> {{ employee.position }}</p>
-        <p><strong>Department:</strong> {{ employee.department }}</p>
-  
-        <div class="mt-4">
-          <h3>Mark Attendance</h3>
-          <select v-model="attendanceStatus" class="form-control">
-            <option value="Present">Present</option>
-            <option value="Absent">Absent</option>
-          </select>
-          <button @click="markAttendance" class="btn btn-primary mt-2">Mark Attendance</button>
-        </div>
-  
-        <div class="mt-4">
-          <h3>Request Time Off</h3>
-          <textarea v-model="timeOffReason" class="form-control" placeholder="Reason for time-off"></textarea>
-          <button @click="requestTimeOff" class="btn btn-primary mt-2">Submit Request</button>
-        </div>
-      </div>
-    `,
-  };
+
   
   const Sidebar = {
     props: ['user'],
