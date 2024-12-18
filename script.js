@@ -56,7 +56,7 @@ const Login = {
 
       if (user) {
         localStorage.setItem('loggedInUser', JSON.stringify(user));
-        this.$router.push(user.role === 'admin' ? '/employees' : '/employee-dashboard');
+        this.$router.push(user.role === 'admin' ? '/admin-dashboard' : '/employee-dashboard');
       } else {
         this.errorMessage = 'Invalid credentials';
       }
@@ -690,104 +690,141 @@ const EmployeeDashboard = {
 
   const AdminDashboard = {
     data() {
-      return {
-        employees: JSON.parse(localStorage.getItem('employees') || '[]'),
-      };
+        return {
+            employees: JSON.parse(localStorage.getItem('employees') || '[]'),
+            navigationCards: [
+                { 
+                    title: 'Employee Management',
+                    route: '/employees',
+                    icon: 'users',
+                    description: 'Manage employee records, add new employees, and update information'
+                },
+                { 
+                    title: 'Payroll',
+                    route: '/payroll',
+                    icon: 'credit-card',
+                    description: 'Process payroll and manage salary information'
+                },
+                { 
+                    title: 'Attendance',
+                    route: '/attendance',
+                    icon: 'clock',
+                    description: 'Track and monitor employee attendance'
+                },
+                { 
+                    title: 'Leave Requests',
+                    route: '/time-off',
+                    icon: 'calendar',
+                    description: 'Manage employee leave requests and approvals'
+                },
+                { 
+                    title: 'Salary Analytics',
+                    route: '/salary-visualization',
+                    icon: 'bar-chart',
+                    description: 'View salary distribution and analytics'
+                },
+                { 
+                    title: 'Attendance Trends',
+                    route: '/attendance-trends',
+                    icon: 'trending-up',
+                    description: 'Analyze attendance patterns and trends'
+                },
+                { 
+                    title: 'Leave Status Overview',
+                    route: '/leave-status',
+                    icon: 'pie-chart',
+                    description: 'View overall leave request statistics'
+                }
+            ]
+        };
     },
     computed: {
-      // Group leave requests by employee
-      employeesWithRequests() {
-        return this.employees.filter(emp => emp.leaveRequests && emp.leaveRequests.length > 0);
-      }
+        employeesWithRequests() {
+            return this.employees.filter(emp => emp.leaveRequests && emp.leaveRequests.length > 0);
+        }
     },
     methods: {
-      approveTimeOff(employeeId, request) {
-        request.status = 'Approved';
-        this.saveEmployees();
-      },
-      rejectTimeOff(employeeId, request) {
-        request.status = 'Rejected';
-        this.saveEmployees();
-      },
-      saveEmployees() {
-        localStorage.setItem('employees', JSON.stringify(this.employees));
-      },
-      // Format requests for display
-      formatRequests(requests) {
-        return requests.map(req => ({
-          date: req.date,
-          reason: req.reason,
-          status: req.status
-        }));
-      }
+        navigateTo(route) {
+            this.$router.push(route);
+        },
+        logout() {
+            localStorage.removeItem('loggedInUser');
+            this.$router.push('/');
+        }
     },
     template: `
-      <div>
-        <h2>Admin Dashboard</h2>
-  
-        <h3>Time Off Requests</h3>
-        <table class="table table-striped">
-          <thead>
-            <tr>
-              <th>Employee Name</th>
-              <th>Requests</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="employee in employeesWithRequests" :key="employee.employeeId">
-              <td>{{ employee.name }}</td>
-              <td>
-                <table class="table table-sm">
-                  <thead>
-                    <tr>
-                      <th>Date</th>
-                      <th>Reason</th>
-                      <th>Status</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr v-for="request in employee.leaveRequests" :key="request.date">
-                      <td>{{ request.date }}</td>
-                      <td>{{ request.reason }}</td>
-                      <td>
-                        <span :class="{
-                          'badge': true,
-                          'bg-warning': request.status === 'Pending',
-                          'bg-success': request.status === 'Approved',
-                          'bg-danger': request.status === 'Rejected'
-                        }">
-                          {{ request.status }}
-                        </span>
-                      </td>
-                      <td>
-                        <div v-if="request.status === 'Pending'" class="btn-group">
-                          <button 
-                            @click="approveTimeOff(employee.employeeId, request)" 
-                            class="btn btn-success btn-sm"
-                          >
-                            Approve
-                          </button>
-                          <button 
-                            @click="rejectTimeOff(employee.employeeId, request)" 
-                            class="btn btn-danger btn-sm"
-                          >
-                            Reject
-                          </button>
+        <div class="container-fluid p-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>Admin Dashboard</h2>
+                <button @click="logout" class="btn btn-danger">
+                    Logout
+                </button>
+            </div>
+
+            <!-- Navigation Cards Grid -->
+            <div class="row g-4">
+                <div v-for="card in navigationCards" 
+                     :key="card.route" 
+                     class="col-md-6 col-lg-4">
+                    <div class="card h-100 shadow-sm hover-card" 
+                         @click="navigateTo(card.route)"
+                         style="cursor: pointer;">
+                        <div class="card-body d-flex flex-column">
+                            <div class="d-flex align-items-center mb-3">
+                                <i :class="'bi bi-' + card.icon" 
+                                   style="font-size: 1.5rem; margin-right: 10px;"></i>
+                                <h5 class="card-title mb-0">{{ card.title }}</h5>
+                            </div>
+                            <p class="card-text text-muted">{{ card.description }}</p>
                         </div>
-                        <span v-else>-</span>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Stats Section -->
+            <div class="row mt-4">
+                <div class="col-md-4">
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h6 class="card-title">Total Employees</h6>
+                            <h3>{{ employees.length }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h6 class="card-title">Pending Leave Requests</h6>
+                            <h3>{{ employees.reduce((acc, emp) => 
+                                acc + emp.leaveRequests.filter(req => req.status === 'Pending').length, 0) 
+                            }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h6 class="card-title">Departments</h6>
+                            <h3>{{ new Set(employees.map(emp => emp.department)).size }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `,
+    // Add custom styles
+    style: `
+        <style>
+        .hover-card {
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .hover-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important;
+        }
+        </style>
     `
-  };
-  
+};
   
   
 
@@ -1217,8 +1254,8 @@ const routes = [
     { path: '/employee-dashboard', component: EmployeeDashboard, meta: { role: 'employee' } },
     { path: '/salary-visualization', component: SalaryChart },
     { path: '/attendance-trends', component: AttendanceTrendChart },
-    { path: '/leave-status', component: LeaveStatusChart }
-    // { path: '/admin-dashboard', component: AdminDashboard, meta: { role: 'admin' } }
+    { path: '/leave-status', component: LeaveStatusChart },
+    { path: '/admin-dashboard', component: AdminDashboard, meta: { role: 'admin' } }
   ];
   
   const router = VueRouter.createRouter({
@@ -1238,32 +1275,27 @@ router.beforeEach((to, from, next) => {
 
 // Vue App
 const app = Vue.createApp({
-    data() {
-      return { user: JSON.parse(localStorage.getItem('loggedInUser') || '{}') };
+  data() {
+    return { 
+      user: JSON.parse(localStorage.getItem('loggedInUser') || '{}') 
+    };
+  },
+  methods: {
+    logout() {
+      localStorage.removeItem('loggedInUser');
+      this.user = {};
+      this.$router.push('/');
     },
-    components: {
-      Navbar,
-      Sidebar, // Optional if you want a sidebar instead of a navbar
-    },
-    methods: {
-      logout() {
-        localStorage.removeItem('loggedInUser');
-        this.user = {};
-        this.$router.push('/');
-      },
-    },
-    mounted() {
-      initDataFromJSON(); // Initialize data from JSON
-    },
-    template: `
-      <div>
-        <Navbar v-if="user.username" :user="user" />
-        <!-- Sidebar can replace Navbar if needed -->
-        <router-view></router-view>
-      </div>
-    `,
-  });
-  
+  },
+  mounted() {
+    initDataFromJSON();
+  },
+  template: `
+    <div>
+      <router-view></router-view>
+    </div>
+  `,
+});
 
 // Use Router
 app.use(router);
