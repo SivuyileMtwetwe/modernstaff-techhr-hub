@@ -82,7 +82,7 @@
                 {
                     "date": "2024-11-15",
                     "reason": "Family Responsibility",
-                    "status": "Denied"
+                    "status": "Rejected"
                 },
                 {
                     "date": "2024-12-02",
@@ -393,7 +393,7 @@
                 {
                     "date": "2024-11-19",
                     "reason": "Childcare",
-                    "status": "Denied"
+                    "status": "Rejected"
                 }
             ],
             "payrollInfo": {
