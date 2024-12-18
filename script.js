@@ -308,10 +308,15 @@ const AttendanceTracking = {
         };
     },
     methods: {
+      
         saveAttendance() {
-            localStorage.setItem('attendanceData', JSON.stringify(this.attendanceData));
-            alert('Attendance data saved successfully!');
-        },
+    localStorage.setItem('attendanceData', JSON.stringify(this.attendanceData));
+    Swal.fire({
+        icon: 'success',
+        title: 'Data Saved',
+        text: 'Attendance data saved successfully!'
+    });
+},
         getAttendanceDetails() {
             const employees = JSON.parse(localStorage.getItem('employees') || '[]');
             const updatedAttendanceData = employees.flatMap(employee => 
@@ -372,9 +377,20 @@ const EmployeeDashboard = {
     markAttendance() {
       const today = new Date().toISOString().split('T')[0];
       if (this.employee.attendance.some(att => att.date === today)) {
-        alert('Attendance for today is already marked.');
+        Swal.fire({
+            icon: 'warning',
+            title: 'Attendance Already Marked',
+            text: 'Attendance for today is already marked.'
+        });
         return;
-      }
+    }
+    
+    // After marking attendance
+    Swal.fire({
+        icon: 'success',
+        title: 'Attendance Marked',
+        text: 'Attendance marked successfully!'
+    });
 
       this.employee.attendance.push({ date: today, status: this.attendanceStatus });
       this.saveEmployeeData();
@@ -386,15 +402,26 @@ const EmployeeDashboard = {
         date: today,
         status: this.attendanceStatus
       });
-      localStorage.setItem('attendanceData', JSON.stringify(attendanceData));
+      // localStorage.setItem('attendanceData', JSON.stringify(attendanceData));
       
-      alert('Attendance marked successfully!');
+      // alert('Attendance marked successfully!');
     },
     requestTimeOff() {
       if (!this.timeOffReason) {
-        alert('Please provide a reason for the time-off request.');
+        Swal.fire({
+            icon: 'error',
+            title: 'Incomplete Information',
+            text: 'Please provide a reason for the time-off request.'
+        });
         return;
-      }
+    }
+    
+    // After submitting time off request
+    Swal.fire({
+        icon: 'success',
+        title: 'Request Submitted',
+        text: 'Time-off request submitted successfully!'
+    });
 
       this.employee.leaveRequests.push({
         date: new Date().toISOString().split('T')[0],
@@ -402,7 +429,7 @@ const EmployeeDashboard = {
         status: 'Pending',
       });
       this.saveEmployeeData();
-      alert('Time-off request submitted successfully!');
+      // alert('Time-off request submitted successfully!');
       this.timeOffReason = '';
     },
     saveEmployeeData() {
@@ -414,9 +441,13 @@ const EmployeeDashboard = {
     generatePaySlip() {
       // Validate date range
       if (!this.paySlipStartDate || !this.paySlipEndDate) {
-        alert('Please select both start and end dates');
+        Swal.fire({
+            icon: 'error',
+            title: 'Incomplete Information',
+            text: 'Please select both start and end dates'
+        });
         return;
-      }
+    }
 
       const startDate = new Date(this.paySlipStartDate);
       const endDate = new Date(this.paySlipEndDate);
