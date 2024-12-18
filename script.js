@@ -13,7 +13,7 @@ const initDataFromJSON = async () => {
     if (employees.length > 0) return;
   
     try {
-      const response = await fetch('data/employeeData.json');
+      const response = await fetch('https://sivuyilemtwetwe.github.io/modernstaff-techhr-hub/');
       if (!response.ok) throw new Error(`Failed to fetch employee data: ${response.status}`);
   
       const data = await response.json();
