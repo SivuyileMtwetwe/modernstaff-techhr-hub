@@ -7,3 +7,101 @@ body {
     margin: 0 auto;
     padding: 20px;
 }
+
+
+.container {
+    display: flex;
+    width: 200%;
+    height: 600px;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+    border-radius: 10px;
+}
+
+/* Left Section: Logo */
+.logo-section {
+    width: 120%;
+    background-color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    
+}
+
+.logo-section h1 {
+    font-size: 32px;
+    color: #003366;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.logo-section p {
+    font-size: 14px;
+    color: #555555;
+}
+
+/* Right Section: Diagonal Form Section */
+.form-section {
+    position: relative;
+    width: 174%;
+    background-color: #003366;
+    clip-path: polygon(20% 0%, 100% 0%, 100% 100%, 0% 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
+}
+
+form {
+    width: 70%;
+    background-color: rgba(255, 255, 255, 0.95);
+    padding: 60px;
+    border-radius: 3px;
+    box-shadow: 0 5px 10px rgba(0, 0, 0.2, 0.2);
+}
+
+form label {
+    font-size: 14px;
+    font-weight: bold;
+    color: #003366;
+    margin-bottom: 5px;
+    display: block;
+}
+
+form input:not([type="checkbox"]) {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 30px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.options {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: #555555;
+}
+
+.options a {
+    color: #1e90ff;
+    text-decoration: none;
+}
+
+button {
+    width: 100%;
+    padding: 12px;
+    background-color: #1e90ff;
+    border: none;
+    border-radius: 5px;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #0056b3;
+}

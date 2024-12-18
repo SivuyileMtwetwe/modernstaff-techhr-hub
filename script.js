@@ -42,39 +42,179 @@ const initDataFromJSON = async () => {
 
 // Login Component
 const Login = {
-    data() {
-      return { username: '', password: '', errorMessage: '' };
-    },
-    methods: {
-      login() {
-        const users = JSON.parse(localStorage.getItem('users') || '[]');
-        const user = users.find(u => u.username === this.username && u.password === this.password);
-  
-        if (user) {
-          localStorage.setItem('loggedInUser', JSON.stringify(user));
-          this.$router.push(user.role === 'admin' ? '/employees' : '/employee-dashboard');
-        } else {
-          this.errorMessage = 'Invalid credentials';
-        }
+  data() {
+    return { 
+      username: '', 
+      password: '', 
+      errorMessage: '' 
+    };
+  },
+  methods: {
+    login() {
+      const users = JSON.parse(localStorage.getItem('users') || '[]');
+      const user = users.find(u => u.username === this.username && u.password === this.password);
+
+      if (user) {
+        localStorage.setItem('loggedInUser', JSON.stringify(user));
+        this.$router.push(user.role === 'admin' ? '/employees' : '/employee-dashboard');
+      } else {
+        this.errorMessage = 'Invalid credentials';
       }
-    },
-    template: `
-      <div class="mt-5">
-        <h2>Login</h2>
-        <form @submit.prevent="login">
-          <div class="mb-3">
-            <input v-model="username" type="text" placeholder="Username" class="form-control" required />
-          </div>
-          <div class="mb-3">
-            <input v-model="password" type="password" placeholder="Password" class="form-control" required />
-          </div>
-          <button type="submit" class="btn btn-primary">Login</button>
-        </form>
-        <p class="text-danger mt-2">{{ errorMessage }}</p>
+    }
+  },
+  template: `
+  <div class="container">
+      <!-- Left Logo Section -->
+      <div class="logo-section">
+      <img src="asserts/final logo .png">
+          <h1>ModernTech HR</h1>
+          <p>Clientele centered</p>
       </div>
-    `,
-  };
-  
+
+      <!-- Right Form Section -->
+      <div class="form-section">
+          <form @submit.prevent="login">
+              <label for="email">Your Username</label>
+              <input 
+                  type="text" 
+                  id="email" 
+                  v-model="username" 
+                  placeholder="Enter your username" 
+                  required
+              >
+
+              <label for="password">Password</label>
+              <input 
+                  type="password" 
+                  id="password" 
+                  v-model="password" 
+                  placeholder="Enter your password" 
+                  required
+              >
+
+              <div class="options">
+                  <label>
+                      <input type="checkbox"> Remember Me
+                  </label>
+                  <a href="#">Recover Password</a>
+              </div>
+
+              <button type="submit">Sign In</button>
+              
+              <p v-if="errorMessage" class="text-danger mt-2">{{ errorMessage }}</p>
+          </form>
+      </div>
+  </div>
+  `,
+  styles: `
+  <style>
+      body {
+          margin: 0;
+          height: 100vh;
+          background: #ffffff;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+      }
+
+      .container {
+          display: flex;
+          width: 200%;
+          height: 600px;
+          box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+          overflow: hidden;
+          border-radius: 10px;
+      }
+
+      /* Left Section: Logo */
+      .logo-section {
+          width: 120%;
+          background-color: #ffffff;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
+          text-align: center;
+      }
+
+      .logo-section h1 {
+          font-size: 32px;
+          color: #003366;
+          font-weight: bold;
+          margin-bottom: 10px;
+      }
+
+      .logo-section p {
+          font-size: 14px;
+          color: #555555;
+      }
+
+      /* Right Section: Diagonal Form Section */
+      .form-section {
+          position: relative;
+          width: 174%;
+          background-color: #003366;
+          clip-path: polygon(20% 0%, 100% 0%, 100% 100%, 0% 100%);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          padding: 40px;
+      }
+
+      form {
+          width: 70%;
+          background-color: rgba(255, 255, 255, 0.95);
+          padding: 60px;
+          border-radius: 3px;
+          box-shadow: 0 5px 10px rgba(0, 0, 0.2, 0.2);
+      }
+
+      form label {
+          font-size: 14px;
+          font-weight: bold;
+          color: #003366;
+          margin-bottom: 5px;
+          display: block;
+      }
+
+      form input:not([type="checkbox"]) {
+          width: 100%;
+          padding: 12px;
+          margin-bottom: 30px;
+          border: 1px solid #ccc;
+          border-radius: 5px;
+      }
+
+      .options {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          font-size: 12px;
+          color: #555555;
+      }
+
+      .options a {
+          color: #1e90ff;
+          text-decoration: none;
+      }
+
+      button {
+          width: 100%;
+          padding: 12px;
+          background-color: #1e90ff;
+          border: none;
+          border-radius: 5px;
+          color: white;
+          font-size: 16px;
+          cursor: pointer;
+      }
+
+      button:hover {
+          background-color: #0056b3;
+      }
+  </style>
+  `
+};
 const PayrollManagement = {
     data() {
       return {
