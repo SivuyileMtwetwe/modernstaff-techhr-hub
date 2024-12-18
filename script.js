@@ -301,59 +301,109 @@ const PayrollManagement = {
     `,
   };
   
-const AttendanceTracking = {
+  const AttendanceTracking = {
     data() {
         return {
-            attendanceData: JSON.parse(localStorage.getItem('attendanceData') || '[]'),
+            employees: JSON.parse(localStorage.getItem('employees') || '[]'),
         };
     },
-    methods: {
-      
-        saveAttendance() {
-    localStorage.setItem('attendanceData', JSON.stringify(this.attendanceData));
-    Swal.fire({
-        icon: 'success',
-        title: 'Data Saved',
-        text: 'Attendance data saved successfully!'
-    });
-},
-        getAttendanceDetails() {
-            const employees = JSON.parse(localStorage.getItem('employees') || '[]');
-            const updatedAttendanceData = employees.flatMap(employee => 
-                employee.attendance.map(att => ({
-                    employeeName: employee.name,
-                    date: att.date,
-                    status: att.status
-                }))
-            );
-            this.attendanceData = updatedAttendanceData;
-            localStorage.setItem('attendanceData', JSON.stringify(updatedAttendanceData));
+    computed: {
+        // Group attendance data by employee
+        employeesWithAttendance() {
+            return this.employees.filter(emp => emp.attendance && emp.attendance.length > 0);
         }
     },
-    mounted() {
-        this.getAttendanceDetails();
+    methods: {
+        formatDate(dateString) {
+            return new Date(dateString).toLocaleDateString();
+        },
+        getStatusClass(status) {
+            return {
+                'badge': true,
+                'bg-success': status === 'Present',
+                'bg-danger': status === 'Absent',
+                'bg-warning': status === 'Late'
+            };
+        },
+        saveAttendance() {
+            localStorage.setItem('employees', JSON.stringify(this.employees));
+            Swal.fire({
+                icon: 'success',
+                title: 'Data Saved',
+                text: 'Attendance data saved successfully!'
+            });
+        }
     },
     template: `
-        <div>
-            <h2>Attendance Tracking</h2>
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>Employee Name</th>
-                        <th>Date</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr v-for="attendance in attendanceData" :key="attendance.date + '-' + attendance.employeeName">
-                        <td>{{ attendance.employeeName }}</td>
-                        <td>{{ attendance.date }}</td>
-                        <td>{{ attendance.status }}</td>
-                    </tr>
-                </tbody>
-            </table>
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">Attendance Tracking</h2>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Employee Name</th>
+                                        <th>Department</th>
+                                        <th>Attendance Records</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="employee in employeesWithAttendance" :key="employee.employeeId">
+                                        <td>{{ employee.name }}</td>
+                                        <td>{{ employee.department }}</td>
+                                        <td>
+                                            <table class="table table-sm">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Date</th>
+                                                        <th>Status</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr v-for="record in employee.attendance" 
+                                                        :key="record.date + employee.employeeId">
+                                                        <td>{{ formatDate(record.date) }}</td>
+                                                        <td>
+                                                            <span :class="getStatusClass(record.status)">
+                                                                {{ record.status }}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                                <tfoot>
+                                                    <tr>
+                                                        <td colspan="2">
+                                                            <div class="d-flex justify-content-between align-items-center">
+                                                                <small>
+                                                                    Total Records: {{ employee.attendance.length }}
+                                                                </small>
+                                                                <div>
+                                                                    <small>
+                                                                        Present: {{ employee.attendance.filter(a => a.status === 'Present').length }}
+                                                                    </small>
+                                                                    <small class="ms-2">
+                                                                        Absent: {{ employee.attendance.filter(a => a.status === 'Absent').length }}
+                                                                    </small>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                </tfoot>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-    `,
+    `
 };
 
 const EmployeeDashboard = {
@@ -644,6 +694,12 @@ const EmployeeDashboard = {
         employees: JSON.parse(localStorage.getItem('employees') || '[]'),
       };
     },
+    computed: {
+      // Group leave requests by employee
+      employeesWithRequests() {
+        return this.employees.filter(emp => emp.leaveRequests && emp.leaveRequests.length > 0);
+      }
+    },
     methods: {
       approveTimeOff(employeeId, request) {
         request.status = 'Approved';
@@ -656,6 +712,14 @@ const EmployeeDashboard = {
       saveEmployees() {
         localStorage.setItem('employees', JSON.stringify(this.employees));
       },
+      // Format requests for display
+      formatRequests(requests) {
+        return requests.map(req => ({
+          date: req.date,
+          reason: req.reason,
+          status: req.status
+        }));
+      }
     },
     template: `
       <div>
@@ -666,32 +730,62 @@ const EmployeeDashboard = {
           <thead>
             <tr>
               <th>Employee Name</th>
-              <th>Date</th>
-              <th>Reason</th>
-              <th>Status</th>
-              <th>Actions</th>
+              <th>Requests</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="employee in employees" :key="employee.employeeId">
-              <template v-for="request in employee.leaveRequests" :key="request.date">
-                  <td>{{ employee.name }}</td>
-                  <td>{{ request.date }}</td>
-                  <td>{{ request.reason }}</td>
-                  <td>{{ request.status }}</td>
-                  <td>
-                    <button v-if="request.status === 'Pending'" 
-                      @click="approveTimeOff(employee.employeeId, request)" class="btn btn-success btn-sm">Approve</button>
-                    <button v-if="request.status === 'Pending'" 
-                      @click="rejectTimeOff(employee.employeeId, request)" class="btn btn-danger btn-sm">Reject</button>
-                  </td>
-                </>
-              </template>
+            <tr v-for="employee in employeesWithRequests" :key="employee.employeeId">
+              <td>{{ employee.name }}</td>
+              <td>
+                <table class="table table-sm">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Reason</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="request in employee.leaveRequests" :key="request.date">
+                      <td>{{ request.date }}</td>
+                      <td>{{ request.reason }}</td>
+                      <td>
+                        <span :class="{
+                          'badge': true,
+                          'bg-warning': request.status === 'Pending',
+                          'bg-success': request.status === 'Approved',
+                          'bg-danger': request.status === 'Rejected'
+                        }">
+                          {{ request.status }}
+                        </span>
+                      </td>
+                      <td>
+                        <div v-if="request.status === 'Pending'" class="btn-group">
+                          <button 
+                            @click="approveTimeOff(employee.employeeId, request)" 
+                            class="btn btn-success btn-sm"
+                          >
+                            Approve
+                          </button>
+                          <button 
+                            @click="rejectTimeOff(employee.employeeId, request)" 
+                            class="btn btn-danger btn-sm"
+                          >
+                            Reject
+                          </button>
+                        </div>
+                        <span v-else>-</span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </td>
             </tr>
           </tbody>
         </table>
       </div>
-    `,
+    `
   };
   
   
