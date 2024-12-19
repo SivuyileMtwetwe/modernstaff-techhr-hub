@@ -99,7 +99,7 @@ const Login = {
                   <a href="#">Recover Password</a>
               </div>
 
-              <button type="submit">Sign In</button>
+              <button type="submit"><i class="fa-solid fa-right-to-bracket"></i> Sign In</button>
               
               <p v-if="errorMessage" class="text-danger mt-2">{{ errorMessage }}</p>
           </form>
@@ -229,10 +229,10 @@ const NavigationHeader = {
   template: `
       <div class="d-flex justify-content-between align-items-center p-3 bg-light mb-4">
           <button @click="goBack" class="btn btn-secondary">
-              <i class="bi bi-arrow-left"></i> Back
+              <i class="fa-solid fa-arrow-left"></i> Back
           </button>
           <button @click="logout" class="btn btn-danger">
-              <i class="bi bi-box-arrow-right"></i> Logout
+              <i class="fa-solid fa-right-from-bracket"></i> Logout
           </button>
       </div>
   `
@@ -269,7 +269,7 @@ const PayrollManagement = {
               <td>{{ employee.name }}</td>
               <td><input type="number" v-model="employee.hoursWorked" class="form-control" /></td>
               <td><input type="number" v-model="employee.hourlyRate" class="form-control" /></td>
-              <td>{{ calculateGrossSalary(employee) }}</td>
+              <td><i class="fa-solid fa-equals"></i> {{ calculateGrossSalary(employee) }}</td>
             </tr>
           </tbody>
         </table>
@@ -377,9 +377,9 @@ const PayrollManagement = {
                         <table class="table table-striped">
                             <thead>
                                 <tr>
-                                    <th>Employee Name</th>
-                                    <th>Department</th>
-                                    <th>Leave Requests</th>
+                                        <th><i class="fa-solid fa-list-ol"></i> Employee Name</th>
+                                        <th><i class="fa-solid fa-code-branch"></i> Department</th>
+                                    <th><i class="fa-solid fa-person-walking-luggage"></i> Leave Requests</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -391,10 +391,10 @@ const PayrollManagement = {
                                             <table class="table table-sm table-bordered mb-0">
                                                 <thead>
                                                     <tr>
-                                                        <th>Date</th>
-                                                        <th>Reason</th>
-                                                        <th>Status</th>
-                                                        <th>Actions</th>
+                                                        <th><i class="fa-regular fa-calendar-days"></i> Date</th>
+                                                        <th><i class="fa-solid fa-circle-question"></i> Reason</th>
+                                                        <th><i class="fa-solid fa-spinner"></i> Status</th>
+                                                        <th><i class="fa-regular fa-comment-dots"></i> Actions</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -417,14 +417,15 @@ const PayrollManagement = {
                                                                 @click="approveRequest(request, group.employeeId)" 
                                                                 class="btn btn-success btn-sm me-2"
                                                                 :disabled="request.status !== 'Pending'"
-                                                            >
+                                                            ><i class="fa-solid fa-check"></i> 
                                                                 Approve
                                                             </button>
                                                             <button 
                                                                 @click="denyRequest(request, group.employeeId)" 
                                                                 class="btn btn-danger btn-sm"
                                                                 :disabled="request.status !== 'Pending'"
-                                                            >
+                                                            ><i class="fa-solid fa-xmark"></i>
+
                                                                 Reject
                                                             </button>
                                                         </td>
@@ -495,9 +496,9 @@ const PayrollManagement = {
                             <table class="table table-bordered">
                                 <thead>
                                     <tr>
-                                        <th>Employee Name</th>
-                                        <th>Department</th>
-                                        <th>Attendance Records</th>
+                                        <th><i class="fa-solid fa-list-ol"></i> Employee Name</th>
+                                        <th><i class="fa-solid fa-code-branch"></i> Department</th>
+                                        <th><i class="fa-solid fa-file-signature"></i> Attendance Records</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -508,8 +509,8 @@ const PayrollManagement = {
                                             <table class="table table-sm">
                                                 <thead>
                                                     <tr>
-                                                        <th>Date</th>
-                                                        <th>Status</th>
+                                                        <th><i class="fa-regular fa-calendar-days"></i> Date</th>
+                                                        <th><i class="fa-solid fa-spinner"></i> Status</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -937,7 +938,7 @@ const EmployeeDashboard = {
                 <div class="col-md-4">
                     <div class="card bg-light">
                         <div class="card-body">
-                            <h6 class="card-title">Total Employees</h6>
+                            <h6 class="card-title"><i class="fa-solid fa-users"></i>Total Employees</h6>
                             <h3>{{ employees.length }}</h3>
                         </div>
                     </div>
@@ -945,7 +946,7 @@ const EmployeeDashboard = {
                 <div class="col-md-4">
                     <div class="card bg-light">
                         <div class="card-body">
-                            <h6 class="card-title">Pending Leave Requests</h6>
+                            <h6 class="card-title"><i class="fa-solid fa-person-walking-luggage"></i> Pending Leave Requests</h6>
                             <h3>{{ employees.reduce((acc, emp) => 
                                 acc + emp.leaveRequests.filter(req => req.status === 'Pending').length, 0) 
                             }}</h3>
@@ -955,7 +956,7 @@ const EmployeeDashboard = {
                 <div class="col-md-4">
                     <div class="card bg-light">
                         <div class="card-body">
-                            <h6 class="card-title">Departments</h6>
+                            <h6 class="card-title"><i class="fa-solid fa-building-user"></i> Departments</h6>
                             <h3>{{ new Set(employees.map(emp => emp.department)).size }}</h3>
                         </div>
                     </div>
@@ -1194,7 +1195,7 @@ const EmployeeManagement = {
                           <input v-model="newEmployee.salary" type="number" class="form-control" placeholder="Salary">
                       </div>
                   </div>
-                  <button @click="addEmployee" class="btn btn-primary mt-3">Add Employee</button>
+                  <button @click="addEmployee" class="btn btn-primary mt-3"><i class="fa-solid fa-user-plus"></i> Add Employee</button>
               </div>
           </div>
 
@@ -1202,12 +1203,12 @@ const EmployeeManagement = {
           <table class="table table-striped">
               <thead>
                   <tr>
-                      <th>Name</th>
-                      <th>Position</th>
-                      <th>Department</th>
-                      <th>Salary</th>
-                      <th>Username</th>
-                      <th>Actions</th>
+                      <th><i class="fa-solid fa-list-ol"></i> Name</th>
+                      <th><i class="fa-solid fa-briefcase"></i> Position</th>
+                      <th><i class="fa-solid fa-code-branch"></i>  Department</th>
+                      <th><i class="fa-solid fa-sack-dollar"></i> Salary</th>
+                      <th><i class="fa-solid fa-user"></i> Username</th>
+                      <th><i class="fa-regular fa-comment-dots"></i> Actions</th>
                   </tr>
               </thead>
               <tbody>
@@ -1226,8 +1227,8 @@ const EmployeeManagement = {
                       </td>
                       <td>{{ employee.username }}</td>
                       <td>
-                          <button @click="regenerateCredentials(employee)" class="btn btn-sm btn-warning me-2">Reset Password</button>
-                          <button @click="deleteEmployee(employee.employeeId)" class="btn btn-sm btn-danger">Delete</button>
+                          <button @click="regenerateCredentials(employee)" class="btn btn-sm btn-warning me-2"><i class="fa-solid fa-rotate-right"></i> Reset Password</button>
+                          <button @click="deleteEmployee(employee.employeeId)" class="btn btn-sm btn-danger"><i class="fa-solid fa-user-xmark"></i> Delete</button>
                       </td>
                   </tr>
               </tbody>
