@@ -756,13 +756,13 @@ const EmployeeDashboard = {
           <option value="Present">Present</option>
           <option value="Absent">Absent</option>
         </select>
-        <button @click="markAttendance" class="btn btn-primary mt-2">Mark Attendance</button>
+        <button @click="markAttendance" class="btn btn-primary mt-2"><i class="fa-solid fa-signature"></i> Mark Attendance</button>
       </div>
 
       <div class="mt-4">
         <h3>Request Time Off</h3>
         <textarea v-model="timeOffReason" class="form-control" placeholder="Reason for time-off"></textarea>
-        <button @click="requestTimeOff" class="btn btn-primary mt-2">Submit Request</button>
+        <button @click="requestTimeOff" class="btn btn-primary mt-2"><i class="fa-solid fa-file-arrow-up"></i> Submit Request</button>
       </div>
 
       <div class="mt-4">
@@ -777,7 +777,7 @@ const EmployeeDashboard = {
             <input type="date" v-model="paySlipEndDate" class="form-control">
           </div>
         </div>
-        <button @click="generatePaySlip" class="btn btn-success mt-2">Generate Pay Slip</button>
+        <button @click="generatePaySlip" class="btn btn-success mt-2"><i class="fa-solid fa-receipt"></i> Generate Pay Slip</button>
       </div>
 
       <!-- Pay Slip Preview -->
@@ -801,7 +801,7 @@ const EmployeeDashboard = {
               <strong>Net Salary:</strong> {{ generatedPaySlip.netSalary }}
             </div>
           </div>
-          <button @click="printPaySlip" class="btn btn-primary mt-3">Print Pay Slip</button>
+          <button @click="printPaySlip" class="btn btn-primary mt-3"><i class="fa-solid fa-print"></i> Print Pay Slip</button>
         </div>
       </div>
     </div>
