@@ -215,7 +215,32 @@ const Login = {
   </style>
   `
 };
+
+const NavigationHeader = {
+  methods: {
+      goBack() {
+          this.$router.go(-1);
+      },
+      logout() {
+          localStorage.removeItem('loggedInUser');
+          this.$router.push('/');
+      }
+  },
+  template: `
+      <div class="d-flex justify-content-between align-items-center p-3 bg-light mb-4">
+          <button @click="goBack" class="btn btn-secondary">
+              <i class="bi bi-arrow-left"></i> Back
+          </button>
+          <button @click="logout" class="btn btn-danger">
+              <i class="bi bi-box-arrow-right"></i> Logout
+          </button>
+      </div>
+  `
+};
 const PayrollManagement = {
+  components: {
+    NavigationHeader
+},
     data() {
       return {
         employees: JSON.parse(localStorage.getItem('employees') || '[]'),
@@ -228,6 +253,7 @@ const PayrollManagement = {
     },
     template: `
       <div>
+       <NavigationHeader />
         <h2>Payroll Management</h2>
         <table class="table table-striped">
           <thead>
@@ -252,56 +278,144 @@ const PayrollManagement = {
   };
   
 
-  const TimeOffRequests = {
+const TimeOffRequests = {
+    components: {
+        NavigationHeader
+    },
     data() {
-      return {
-        timeOffRequests: JSON.parse(localStorage.getItem('timeOffRequests') || '[]'),
-      };
+        return {
+            timeOffRequests: [],
+            employees: JSON.parse(localStorage.getItem('employees') || '[]')
+        };
+    },
+    created() {
+        // Aggregate all leave requests from employees
+        this.timeOffRequests = this.employees.reduce((requests, employee) => {
+            const employeeRequests = (employee.leaveRequests || []).map(request => ({
+                ...request,
+                employeeName: employee.name,
+                employeeId: employee.employeeId
+            }));
+            return [...requests, ...employeeRequests];
+        }, []);
     },
     methods: {
-      approveRequest(request) {
-        request.status = 'Approved';
-        this.saveRequests();
-      },
-      denyRequest(request) {
-        request.status = 'Denied';
-        this.saveRequests();
-      },
-      saveRequests() {
-        localStorage.setItem('timeOffRequests', JSON.stringify(this.timeOffRequests));
-      },
+        approveRequest(request) {
+            // Find employee and update their leave request
+            const employee = this.employees.find(emp => emp.employeeId === request.employeeId);
+            if (employee) {
+                const requestIndex = employee.leaveRequests.findIndex(req => 
+                    req.date === request.date && req.reason === request.reason
+                );
+                if (requestIndex !== -1) {
+                    employee.leaveRequests[requestIndex].status = 'Approved';
+                    // Update in local storage
+                    localStorage.setItem('employees', JSON.stringify(this.employees));
+                    // Update in component state
+                    this.timeOffRequests = this.timeOffRequests.map(req => 
+                        req === request ? { ...req, status: 'Approved' } : req
+                    );
+                    
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Request Approved',
+                        text: 'The leave request has been approved successfully.'
+                    });
+                }
+            }
+        },
+        denyRequest(request) {
+            // Find employee and update their leave request
+            const employee = this.employees.find(emp => emp.employeeId === request.employeeId);
+            if (employee) {
+                const requestIndex = employee.leaveRequests.findIndex(req => 
+                    req.date === request.date && req.reason === request.reason
+                );
+                if (requestIndex !== -1) {
+                    employee.leaveRequests[requestIndex].status = 'Rejected';
+                    // Update in local storage
+                    localStorage.setItem('employees', JSON.stringify(this.employees));
+                    // Update in component state
+                    this.timeOffRequests = this.timeOffRequests.map(req => 
+                        req === request ? { ...req, status: 'Rejected' } : req
+                    );
+                    
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Request Denied',
+                        text: 'The leave request has been rejected.'
+                    });
+                }
+            }
+        }
     },
     template: `
-      <div>
-        <h2>Time Off Requests</h2>
-        <table class="table table-striped">
-          <thead>
-            <tr>
-              <th>Employee Name</th>
-              <th>Request Date</th>
-              <th>Reason</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="request in timeOffRequests" :key="request.id">
-              <td>{{ request.employeeName }}</td>
-              <td>{{ request.date }}</td>
-              <td>{{ request.reason }}</td>
-              <td>{{ request.status }}</td>
-              <td>
-                <button @click="approveRequest(request)" class="btn btn-success btn-sm">Approve</button>
-                <button @click="denyRequest(request)" class="btn btn-danger btn-sm">Deny</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    `,
-  };
+        <div class="container-fluid">
+            <NavigationHeader />
+            <div class="card">
+                <div class="card-header">
+                    <h2>Time Off Requests</h2>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Employee Name</th>
+                                    <th>Request Date</th>
+                                    <th>Reason</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="request in timeOffRequests" :key="request.date + request.employeeId">
+                                    <td>{{ request.employeeName }}</td>
+                                    <td>{{ new Date(request.date).toLocaleDateString() }}</td>
+                                    <td>{{ request.reason }}</td>
+                                    <td>
+                                        <span :class="{
+                                            'badge': true,
+                                            'bg-warning': request.status === 'Pending',
+                                            'bg-success': request.status === 'Approved',
+                                            'bg-danger': request.status === 'Rejected'
+                                        }">
+                                            {{ request.status }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <button 
+                                            @click="approveRequest(request)" 
+                                            class="btn btn-success btn-sm me-2"
+                                            :disabled="request.status !== 'Pending'"
+                                        >
+                                            Approve
+                                        </button>
+                                        <button 
+                                            @click="denyRequest(request)" 
+                                            class="btn btn-danger btn-sm"
+                                            :disabled="request.status !== 'Pending'"
+                                        >
+                                            Reject
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr v-if="timeOffRequests.length === 0">
+                                    <td colspan="5" class="text-center">No time off requests found.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `
+};
   
   const AttendanceTracking = {
+    components: {
+      NavigationHeader
+  },
     data() {
         return {
             employees: JSON.parse(localStorage.getItem('employees') || '[]'),
@@ -335,6 +449,7 @@ const PayrollManagement = {
         }
     },
     template: `
+     <NavigationHeader />
         <div class="container-fluid">
             <div class="row">
                 <div class="col-12">
@@ -407,6 +522,9 @@ const PayrollManagement = {
 };
 
 const EmployeeDashboard = {
+  components: {
+    NavigationHeader
+},
   data() {
     return {
       employee: {}, // Current logged-in employee
@@ -592,6 +710,7 @@ const EmployeeDashboard = {
   },
   template: `
     <div>
+    <NavigationHeader />
       <h2>Welcome, {{ employee.name }}</h2>
       <p><strong>Position:</strong> {{ employee.position }}</p>
       <p><strong>Department:</strong> {{ employee.department }}</p>
@@ -689,6 +808,9 @@ const EmployeeDashboard = {
   };
 
   const AdminDashboard = {
+    components: {
+      NavigationHeader
+  },
     data() {
         return {
             employees: JSON.parse(localStorage.getItem('employees') || '[]'),
@@ -747,18 +869,13 @@ const EmployeeDashboard = {
         navigateTo(route) {
             this.$router.push(route);
         },
-        logout() {
-            localStorage.removeItem('loggedInUser');
-            this.$router.push('/');
-        }
+        
     },
     template: `
+    <NavigationHeader />
         <div class="container-fluid p-4">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2>Admin Dashboard</h2>
-                <button @click="logout" class="btn btn-danger">
-                    Logout
-                </button>
             </div>
 
             <!-- Navigation Cards Grid -->
@@ -830,6 +947,9 @@ const EmployeeDashboard = {
 
 // Employee Management Component (Admin)
 const EmployeeManagement = {
+  components: {
+    NavigationHeader
+},
     data() {
         return {
             employees: JSON.parse(localStorage.getItem('employees') || '[]'),
@@ -978,6 +1098,7 @@ const EmployeeManagement = {
     },
     template: `
         <div>
+        <NavigationHeader />
             <h2>Employee Management</h2>
             
             <!-- Add Employee Form -->
@@ -1032,103 +1153,10 @@ const EmployeeManagement = {
     `
 };
 
-
-  
-  const Sidebar = {
-    props: ['user'],
-    methods: {
-      logout() {
-        localStorage.removeItem('loggedInUser');
-        this.$router.push('/');
-      },
-    },
-    template: `
-      <div class="d-flex flex-column flex-shrink-0 p-3 bg-light" style="width: 250px; height: 100vh;">
-        <h5 class="mb-3">ModernTech HR</h5>
-        <ul class="nav nav-pills flex-column mb-auto">
-          <!-- Admin Links -->
-          <li v-if="user.role === 'admin'">
-            <router-link to="/admin-dashboard" class="nav-link">Dashboard</router-link>
-          </li>
-          <li v-if="user.role === 'admin'">
-            <router-link to="/employees" class="nav-link">Employees</router-link>
-          </li>
-          <li v-if="user.role === 'admin'">
-            <router-link to="/time-off" class="nav-link">Time Off Requests</router-link>
-          </li>
-          <li v-if="user.role === 'admin'">
-            <router-link to="/attendance" class="nav-link">Attendance</router-link>
-          </li>
-          <li v-if="user.role === 'admin'">
-            <router-link to="/payroll" class="nav-link">Payroll</router-link>
-         <li v-if="user.role === 'admin'>
-    <router-link to="/salary-visualization" class="nav-link">Salary Visualization</router-link>
-</li>
-<li v-if="user.role === 'admin'>
-    <router-link to="/attendance-trends" class="nav-link">Attendance Trends</router-link>
-</li >
-<li v-if="user.role === 'admin'>
-    <router-link to="/leave-status" class="nav-link">Leave Status</router-link>
-</li>
-  
-          <!-- Employee Links -->
-          <li v-if="user.role === 'employee'">
-            <router-link to="/employee-dashboard" class="nav-link">Dashboard</router-link>
-          </li>
-        </ul>
-        <hr />
-        <button class="btn btn-danger w-100" @click="logout">Logout</button>
-      </div>
-    `,
-  };
-  
-  const Navbar = {
-  props: ['user'], // Pass the logged-in user as a prop
-  methods: {
-    logout() {
-      localStorage.removeItem('loggedInUser');
-      this.$router.push('/');
-    },
-  },
-  template: `
-    <nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
-      <div class="container-fluid">
-        <a class="navbar-brand" href="#">ModernTech HR</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-          <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-          <ul class="navbar-nav me-auto">
-            <!-- Admin Links -->
-            <li class="nav-item" v-if="user.role === 'admin'">
-              <router-link to="/admin-dashboard" class="nav-link">Dashboard</router-link>
-            </li>
-            <li class="nav-item" v-if="user.role === 'admin'">
-              <router-link to="/employees" class="nav-link">Employees</router-link>
-            </li>
-            <li class="nav-item" v-if="user.role === 'admin'">
-              <router-link to="/time-off" class="nav-link">Time Off Requests</router-link>
-            </li>
-            <li class="nav-item" v-if="user.role === 'admin'">
-              <router-link to="/attendance" class="nav-link">Attendance</router-link>
-            </li>
-            <li class="nav-item" v-if="user.role === 'admin'">
-              <router-link to="/payroll" class="nav-link">Payroll</router-link>
-            </li>
-
-            <!-- Employee Links -->
-            <li class="nav-item" v-if="user.role === 'employee'">
-              <router-link to="/employee-dashboard" class="nav-link">Dashboard</router-link>
-            </li>
-          </ul>
-          <button class="btn btn-danger" @click="logout">Logout</button>
-        </div>
-      </div>
-    </nav>
-  `,
-};
-
 const LeaveStatusChart = {
+  components: {
+    NavigationHeader
+},
   mounted() {
       const ctx = document.getElementById('leaveStatusChart').getContext('2d');
       const employees = JSON.parse(localStorage.getItem('employees') || '[]');
@@ -1156,6 +1184,7 @@ const LeaveStatusChart = {
   },
   template: `
       <div>
+      <NavigationHeader />
           <h2>Leave Request Status</h2>
           <canvas id="leaveStatusChart"></canvas>
       </div>
@@ -1163,6 +1192,9 @@ const LeaveStatusChart = {
 };
 
 const AttendanceTrendChart = {
+  components: {
+    NavigationHeader
+},
   mounted() {
       const ctx = document.getElementById('attendanceTrendChart').getContext('2d');
       const employees = JSON.parse(localStorage.getItem('employees') || '[]');
@@ -1198,6 +1230,7 @@ const AttendanceTrendChart = {
   },
   template: `
       <div>
+      <NavigationHeader />
           <h2>Attendance Trends</h2>
           <canvas id="attendanceTrendChart"></canvas>
       </div>
@@ -1205,6 +1238,9 @@ const AttendanceTrendChart = {
 };
 
 const SalaryChart = {
+  components: {
+    NavigationHeader
+},
   mounted() {
       const ctx = document.getElementById('salaryChart').getContext('2d');
       const employees = JSON.parse(localStorage.getItem('employees') || '[]');
@@ -1235,6 +1271,7 @@ const SalaryChart = {
   },
   template: `
       <div>
+      <NavigationHeader />
           <h2>Department-Wise Salary</h2>
           <canvas id="salaryChart"></canvas>
       </div>
@@ -1248,7 +1285,7 @@ const routes = [
     { path: '/', component: Login },
     { path: '/employees', component: EmployeeManagement, meta: { role: 'admin' } },
     { path: '/payroll', component: PayrollManagement, meta: { role: 'admin' } },
-    { path: '/time-off', component: AdminDashboard, meta: { role: 'admin' } },
+    { path: '/time-off', component: TimeOffRequests, meta: { role: 'admin' } },
     { path: '/attendance', component: AttendanceTracking, meta: { role: 'admin' } },
     { path: '/visualization', component: DataVisualization, meta: { role: 'admin' } },
     { path: '/employee-dashboard', component: EmployeeDashboard, meta: { role: 'employee' } },
