@@ -844,8 +844,8 @@ const EmployeeDashboard = {
 
   const AdminDashboard = {
     components: {
-      NavigationHeader
-  },
+        NavigationHeader
+    },
     data() {
         return {
             employees: JSON.parse(localStorage.getItem('employees') || '[]'),
@@ -853,43 +853,43 @@ const EmployeeDashboard = {
                 { 
                     title: 'Employee Management',
                     route: '/employees',
-                    icon: 'users',
+                    icon: '<i class="fas fa-users"></i>',
                     description: 'Manage employee records, add new employees, and update information'
                 },
                 { 
                     title: 'Payroll',
                     route: '/payroll',
-                    icon: 'credit-card',
+                    icon: '<i class="fas fa-credit-card"></i>',
                     description: 'Process payroll and manage salary information'
                 },
                 { 
                     title: 'Attendance',
                     route: '/attendance',
-                    icon: 'clock',
+                    icon: '<i class="fas fa-clock"></i>',
                     description: 'Track and monitor employee attendance'
                 },
                 { 
                     title: 'Leave Requests',
                     route: '/time-off',
-                    icon: 'calendar',
+                    icon: '<i class="fas fa-calendar"></i>',
                     description: 'Manage employee leave requests and approvals'
                 },
                 { 
                     title: 'Salary Analytics',
                     route: '/salary-visualization',
-                    icon: 'bar-chart',
+                    icon: '<i class="fas fa-chart-bar"></i>',
                     description: 'View salary distribution and analytics'
                 },
                 { 
                     title: 'Attendance Trends',
                     route: '/attendance-trends',
-                    icon: 'trending-up',
+                    icon: '<i class="fas fa-chart-line"></i>',
                     description: 'Analyze attendance patterns and trends'
                 },
                 { 
                     title: 'Leave Status Overview',
                     route: '/leave-status',
-                    icon: 'pie-chart',
+                    icon: '<i class="fas fa-chart-pie"></i>',
                     description: 'View overall leave request statistics'
                 }
             ]
@@ -904,10 +904,10 @@ const EmployeeDashboard = {
         navigateTo(route) {
             this.$router.push(route);
         },
-        
     },
     template: `
-    <NavigationHeader />
+    <div>
+        <NavigationHeader />
         <div class="container-fluid p-4">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2>Admin Dashboard</h2>
@@ -923,8 +923,7 @@ const EmployeeDashboard = {
                          style="cursor: pointer;">
                         <div class="card-body d-flex flex-column">
                             <div class="d-flex align-items-center mb-3">
-                                <i :class="'bi bi-' + card.icon" 
-                                   style="font-size: 1.5rem; margin-right: 10px;"></i>
+                                <span v-html="card.icon" class="icon-space"></span>
                                 <h5 class="card-title mb-0">{{ card.title }}</h5>
                             </div>
                             <p class="card-text text-muted">{{ card.description }}</p>
@@ -938,7 +937,10 @@ const EmployeeDashboard = {
                 <div class="col-md-4">
                     <div class="card bg-light">
                         <div class="card-body">
-                            <h6 class="card-title"><i class="fa-solid fa-users"></i>Total Employees</h6>
+                            <h6 class="card-title">
+                                <i class="fas fa-users"></i>
+                                Total Employees
+                            </h6>
                             <h3>{{ employees.length }}</h3>
                         </div>
                     </div>
@@ -946,7 +948,10 @@ const EmployeeDashboard = {
                 <div class="col-md-4">
                     <div class="card bg-light">
                         <div class="card-body">
-                            <h6 class="card-title"><i class="fa-solid fa-person-walking-luggage"></i> Pending Leave Requests</h6>
+                            <h6 class="card-title">
+                                <i class="fas fa-person-walking"></i>
+                                Pending Leave Requests
+                            </h6>
                             <h3>{{ employees.reduce((acc, emp) => 
                                 acc + emp.leaveRequests.filter(req => req.status === 'Pending').length, 0) 
                             }}</h3>
@@ -956,16 +961,19 @@ const EmployeeDashboard = {
                 <div class="col-md-4">
                     <div class="card bg-light">
                         <div class="card-body">
-                            <h6 class="card-title"><i class="fa-solid fa-building-user"></i> Departments</h6>
+                            <h6 class="card-title">
+                                <i class="fas fa-building"></i>
+                                Departments
+                            </h6>
                             <h3>{{ new Set(employees.map(emp => emp.department)).size }}</h3>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
     `,
-    // Add custom styles
-    style: `
+    styles: `
         <style>
         .hover-card {
             transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
@@ -974,10 +982,16 @@ const EmployeeDashboard = {
             transform: translateY(-5px);
             box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important;
         }
+        .icon-space {
+            margin-right: 10px;
+            font-size: 1.5rem;
+        }
+        .card-title i {
+            margin-right: 10px;
+        }
         </style>
     `
 };
-  
   
 
 // Employee Management Component (Admin)
