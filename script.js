@@ -278,43 +278,54 @@ const PayrollManagement = {
   };
   
 
-const TimeOffRequests = {
+  const TimeOffRequests = {
     components: {
         NavigationHeader
     },
     data() {
         return {
-            timeOffRequests: [],
+            groupedRequests: [],
             employees: JSON.parse(localStorage.getItem('employees') || '[]')
         };
     },
     created() {
-        // Aggregate all leave requests from employees
-        this.timeOffRequests = this.employees.reduce((requests, employee) => {
-            const employeeRequests = (employee.leaveRequests || []).map(request => ({
-                ...request,
+        // Group requests by employee
+        this.groupedRequests = this.employees
+            .filter(employee => employee.leaveRequests && employee.leaveRequests.length > 0)
+            .map(employee => ({
                 employeeName: employee.name,
-                employeeId: employee.employeeId
+                employeeId: employee.employeeId,
+                department: employee.department,
+                requests: employee.leaveRequests.map(request => ({
+                    ...request,
+                    employeeId: employee.employeeId
+                }))
             }));
-            return [...requests, ...employeeRequests];
-        }, []);
     },
     methods: {
-        approveRequest(request) {
-            // Find employee and update their leave request
-            const employee = this.employees.find(emp => emp.employeeId === request.employeeId);
+        formatDate(dateString) {
+            return new Date(dateString).toLocaleDateString();
+        },
+        approveRequest(request, employeeId) {
+            const employee = this.employees.find(emp => emp.employeeId === employeeId);
             if (employee) {
                 const requestIndex = employee.leaveRequests.findIndex(req => 
                     req.date === request.date && req.reason === request.reason
                 );
                 if (requestIndex !== -1) {
                     employee.leaveRequests[requestIndex].status = 'Approved';
-                    // Update in local storage
                     localStorage.setItem('employees', JSON.stringify(this.employees));
-                    // Update in component state
-                    this.timeOffRequests = this.timeOffRequests.map(req => 
-                        req === request ? { ...req, status: 'Approved' } : req
-                    );
+                    
+                    // Update the grouped requests
+                    const groupIndex = this.groupedRequests.findIndex(group => group.employeeId === employeeId);
+                    if (groupIndex !== -1) {
+                        const reqIndex = this.groupedRequests[groupIndex].requests.findIndex(req =>
+                            req.date === request.date && req.reason === request.reason
+                        );
+                        if (reqIndex !== -1) {
+                            this.groupedRequests[groupIndex].requests[reqIndex].status = 'Approved';
+                        }
+                    }
                     
                     Swal.fire({
                         icon: 'success',
@@ -324,21 +335,26 @@ const TimeOffRequests = {
                 }
             }
         },
-        denyRequest(request) {
-            // Find employee and update their leave request
-            const employee = this.employees.find(emp => emp.employeeId === request.employeeId);
+        denyRequest(request, employeeId) {
+            const employee = this.employees.find(emp => emp.employeeId === employeeId);
             if (employee) {
                 const requestIndex = employee.leaveRequests.findIndex(req => 
                     req.date === request.date && req.reason === request.reason
                 );
                 if (requestIndex !== -1) {
                     employee.leaveRequests[requestIndex].status = 'Rejected';
-                    // Update in local storage
                     localStorage.setItem('employees', JSON.stringify(this.employees));
-                    // Update in component state
-                    this.timeOffRequests = this.timeOffRequests.map(req => 
-                        req === request ? { ...req, status: 'Rejected' } : req
-                    );
+                    
+                    // Update the grouped requests
+                    const groupIndex = this.groupedRequests.findIndex(group => group.employeeId === employeeId);
+                    if (groupIndex !== -1) {
+                        const reqIndex = this.groupedRequests[groupIndex].requests.findIndex(req =>
+                            req.date === request.date && req.reason === request.reason
+                        );
+                        if (reqIndex !== -1) {
+                            this.groupedRequests[groupIndex].requests[reqIndex].status = 'Rejected';
+                        }
+                    }
                     
                     Swal.fire({
                         icon: 'success',
@@ -362,46 +378,64 @@ const TimeOffRequests = {
                             <thead>
                                 <tr>
                                     <th>Employee Name</th>
-                                    <th>Request Date</th>
-                                    <th>Reason</th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
+                                    <th>Department</th>
+                                    <th>Leave Requests</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr v-for="request in timeOffRequests" :key="request.date + request.employeeId">
-                                    <td>{{ request.employeeName }}</td>
-                                    <td>{{ new Date(request.date).toLocaleDateString() }}</td>
-                                    <td>{{ request.reason }}</td>
+                                <tr v-for="group in groupedRequests" :key="group.employeeId">
+                                    <td>{{ group.employeeName }}</td>
+                                    <td>{{ group.department }}</td>
                                     <td>
-                                        <span :class="{
-                                            'badge': true,
-                                            'bg-warning': request.status === 'Pending',
-                                            'bg-success': request.status === 'Approved',
-                                            'bg-danger': request.status === 'Rejected'
-                                        }">
-                                            {{ request.status }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <button 
-                                            @click="approveRequest(request)" 
-                                            class="btn btn-success btn-sm me-2"
-                                            :disabled="request.status !== 'Pending'"
-                                        >
-                                            Approve
-                                        </button>
-                                        <button 
-                                            @click="denyRequest(request)" 
-                                            class="btn btn-danger btn-sm"
-                                            :disabled="request.status !== 'Pending'"
-                                        >
-                                            Reject
-                                        </button>
+                                        <div class="table-responsive">
+                                            <table class="table table-sm table-bordered mb-0">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Date</th>
+                                                        <th>Reason</th>
+                                                        <th>Status</th>
+                                                        <th>Actions</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr v-for="request in group.requests" 
+                                                        :key="request.date + request.reason">
+                                                        <td>{{ formatDate(request.date) }}</td>
+                                                        <td>{{ request.reason }}</td>
+                                                        <td>
+                                                            <span :class="{
+                                                                'badge': true,
+                                                                'bg-warning': request.status === 'Pending',
+                                                                'bg-success': request.status === 'Approved',
+                                                                'bg-danger': request.status === 'Rejected'
+                                                            }">
+                                                                {{ request.status }}
+                                                            </span>
+                                                        </td>
+                                                        <td>
+                                                            <button 
+                                                                @click="approveRequest(request, group.employeeId)" 
+                                                                class="btn btn-success btn-sm me-2"
+                                                                :disabled="request.status !== 'Pending'"
+                                                            >
+                                                                Approve
+                                                            </button>
+                                                            <button 
+                                                                @click="denyRequest(request, group.employeeId)" 
+                                                                class="btn btn-danger btn-sm"
+                                                                :disabled="request.status !== 'Pending'"
+                                                            >
+                                                                Reject
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
                                     </td>
                                 </tr>
-                                <tr v-if="timeOffRequests.length === 0">
-                                    <td colspan="5" class="text-center">No time off requests found.</td>
+                                <tr v-if="groupedRequests.length === 0">
+                                    <td colspan="3" class="text-center">No time off requests found.</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -948,209 +982,274 @@ const EmployeeDashboard = {
 // Employee Management Component (Admin)
 const EmployeeManagement = {
   components: {
-    NavigationHeader
-},
-    data() {
-        return {
-            employees: JSON.parse(localStorage.getItem('employees') || '[]'),
-            newEmployee: {
-                name: '',
-                position: '',
-                department: '',
-                salary: '',
-                employeeId: '',
-                username: '',
-                password: '',
-                attendance: [],
-                leaveRequests: []
-            }
-        };
-    },
-    methods: {
+      NavigationHeader
+  },
+  data() {
+      return {
+          employees: JSON.parse(localStorage.getItem('employees') || '[]'),
+          newEmployee: {
+              name: '',
+              position: '',
+              department: '',
+              salary: '',
+              employeeId: '',
+              username: '',
+              password: '',
+              attendance: [],
+              leaveRequests: []
+          },
+          editableFields: ['name', 'position', 'department', 'salary']
+      };
+  },
+  methods: {
+      async editCell(employee, field) {
+          const currentValue = employee[field];
+          
+          let inputType = 'text';
+          if (field === 'salary') {
+              inputType = 'number';
+          }
+
+          const capitalisedField = field.charAt(0).toUpperCase() + field.slice(1);
+          
+          const { value: newValue } = await Swal.fire({
+              title: `Edit ${capitalisedField}`,
+              input: inputType,
+              inputLabel: `Enter new ${field}`,
+              inputValue: currentValue,
+              showCancelButton: true,
+              inputValidator: (value) => {
+                  if (!value) {
+                      return `${capitalisedField} cannot be empty!`;
+                  }
+                  if (field === 'salary' && value < 0) {
+                      return 'Salary cannot be negative!';
+                  }
+              }
+          });
+
+          if (newValue) {
+              // Update the employee data
+              employee[field] = field === 'salary' ? parseFloat(newValue) : newValue;
+              
+              // If name is changed, update username
+              if (field === 'name') {
+                  const newUsername = newValue.toLowerCase().replace(/\s+/g, '.') + '.' + employee.employeeId;
+                  employee.username = newUsername;
+                  
+                  // Update username in users array
+                  const users = JSON.parse(localStorage.getItem('users') || '[]');
+                  const userIndex = users.findIndex(u => u.employeeId === employee.employeeId);
+                  if (userIndex !== -1) {
+                      users[userIndex].username = newUsername;
+                      localStorage.setItem('users', JSON.stringify(users));
+                  }
+              }
+
+              // Save changes
+              this.saveEmployees();
+
+              // Show success message
+              await Swal.fire({
+                  icon: 'success',
+                  title: 'Updated!',
+                  text: `${capitalisedField} has been updated successfully.`,
+                  timer: 1500
+              });
+          }
+      },
       regenerateCredentials(employee) {
-        const users = JSON.parse(localStorage.getItem('users') || '[]');
-        const password = 'emp' + Math.floor(1000 + Math.random() * 9000);
-    
-        // Update credentials in the users array
-        const user = users.find(u => u.employeeId === employee.employeeId);
-        if (user) {
-            user.password = password;
-        } else {
-            users.push({ username: employee.username, password, role: 'employee', employeeId: employee.employeeId });
-        }
-    
-        // Update employee data
-        employee.password = password;
-    
-        // Save updated data to localStorage
-        this.saveEmployees(users);
-    
-        // Use SweetAlert2 for notification
-        Swal.fire({
-            icon: 'success',
-            title: 'Credentials Updated',
-            text: `New Password: ${password}`,
-            footer: 'Please ensure the employee changes this password'
-        });
-    },
-    addEmployee() {
-        // Validate input
-        if (!this.newEmployee.name || !this.newEmployee.position || !this.newEmployee.department) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Incomplete Information',
-                text: 'Please fill in all required fields'
-            });
-            return;
-        }
-    
-        // Generate unique employee ID
-        const employeeId = Date.now().toString();
-        
-        // Generate username and password
-        const username = this.newEmployee.name.toLowerCase().replace(/\s+/g, '.') + '.' + employeeId;
-        const password = 'emp' + Math.floor(1000 + Math.random() * 9000);
-    
-        // Create full employee object
-        const employeeToAdd = {
-            ...this.newEmployee,
-            employeeId,
-            username,
-            password,
-            attendance: [],
-            leaveRequests: []
-        };
-    
-        // Add to employees array
-        this.employees.push(employeeToAdd);
-    
-        // Add to users for login
-        const users = JSON.parse(localStorage.getItem('users') || '[]');
-        users.push({
-            username,
-            password,
-            role: 'employee',
-            employeeId
-        });
-    
-        // Save to localStorage
-        this.saveEmployees(users);
-    
-        // Reset form
-        this.newEmployee = {
-            name: '',
-            position: '',
-            department: '',
-            salary: '',
-            employeeId: '',
-            username: '',
-            password: ''
-        };
-    
-        // Use SweetAlert2 for success notification
-        Swal.fire({
-            icon: 'success',
-            title: 'Employee Added Successfully!',
-            html: `
-                <p>Username: ${username}</p>
-                <p>Password: ${password}</p>
-            `,
-            footer: 'Please share credentials securely with the employee'
-        });
-    },
-   deleteEmployee(employeeId) {
-    // Use SweetAlert2 for confirmation and notification
-    Swal.fire({
-        title: "Are you sure?",
-        text: "You won't be able to revert this!",
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonColor: "#3085d6",
-        cancelButtonColor: "#d33",
-        confirmButtonText: "Yes, delete it!"
-    }).then((result) => {
-        if (result.isConfirmed) {
-            // Remove from employees array
-            this.employees = this.employees.filter(emp => emp.employeeId !== employeeId);
+          const users = JSON.parse(localStorage.getItem('users') || '[]');
+          const password = 'emp' + Math.floor(1000 + Math.random() * 9000);
+      
+          // Update credentials in the users array
+          const user = users.find(u => u.employeeId === employee.employeeId);
+          if (user) {
+              user.password = password;
+          } else {
+              users.push({ username: employee.username, password, role: 'employee', employeeId: employee.employeeId });
+          }
+      
+          // Update employee data
+          employee.password = password;
+      
+          // Save updated data to localStorage
+          this.saveEmployees(users);
+      
+          Swal.fire({
+              icon: 'success',
+              title: 'Credentials Updated',
+              text: `New Password: ${password}`,
+              footer: 'Please ensure the employee changes this password'
+          });
+      },
+      addEmployee() {
+          if (!this.newEmployee.name || !this.newEmployee.position || !this.newEmployee.department) {
+              Swal.fire({
+                  icon: 'error',
+                  title: 'Incomplete Information',
+                  text: 'Please fill in all required fields'
+              });
+              return;
+          }
+      
+          const employeeId = Date.now().toString();
+          const username = this.newEmployee.name.toLowerCase().replace(/\s+/g, '.') + '.' + employeeId;
+          const password = 'emp' + Math.floor(1000 + Math.random() * 9000);
+      
+          const employeeToAdd = {
+              ...this.newEmployee,
+              employeeId,
+              username,
+              password,
+              attendance: [],
+              leaveRequests: []
+          };
+      
+          this.employees.push(employeeToAdd);
+      
+          const users = JSON.parse(localStorage.getItem('users') || '[]');
+          users.push({
+              username,
+              password,
+              role: 'employee',
+              employeeId
+          });
+      
+          this.saveEmployees(users);
+      
+          this.newEmployee = {
+              name: '',
+              position: '',
+              department: '',
+              salary: '',
+              employeeId: '',
+              username: '',
+              password: ''
+          };
+      
+          Swal.fire({
+              icon: 'success',
+              title: 'Employee Added Successfully!',
+              html: `
+                  <p>Username: ${username}</p>
+                  <p>Password: ${password}</p>
+              `,
+              footer: 'Please share credentials securely with the employee'
+          });
+      },
+      deleteEmployee(employeeId) {
+          Swal.fire({
+              title: "Are you sure?",
+              text: "You won't be able to revert this!",
+              icon: "warning",
+              showCancelButton: true,
+              confirmButtonColor: "#3085d6",
+              cancelButtonColor: "#d33",
+              confirmButtonText: "Yes, delete it!"
+          }).then((result) => {
+              if (result.isConfirmed) {
+                  this.employees = this.employees.filter(emp => emp.employeeId !== employeeId);
+                  
+                  const users = JSON.parse(localStorage.getItem('users') || '[]');
+                  const updatedUsers = users.filter(user => user.employeeId !== employeeId);
+                  
+                  this.saveEmployees(updatedUsers);
+                  
+                  Swal.fire({
+                      title: "Deleted!",
+                      text: "Employee has been deleted.",
+                      icon: "success"
+                  });
+              }
+          });
+      },
+      saveEmployees(users) {
+          localStorage.setItem('employees', JSON.stringify(this.employees));
+          if (users) {
+              localStorage.setItem('users', JSON.stringify(users));
+          }
+      }
+  },
+  template: `
+      <div>
+          <NavigationHeader />
+          <h2>Employee Management</h2>
+          
+          <!-- Add Employee Form -->
+          <div class="card mb-4">
+              <div class="card-header">Add New Employee</div>
+              <div class="card-body">
+                  <div class="row">
+                      <div class="col-md-3">
+                          <input v-model="newEmployee.name" type="text" class="form-control" placeholder="Name" required>
+                      </div>
+                      <div class="col-md-3">
+                          <input v-model="newEmployee.position" type="text" class="form-control" placeholder="Position" required>
+                      </div>
+                      <div class="col-md-3">
+                          <input v-model="newEmployee.department" type="text" class="form-control" placeholder="Department" required>
+                      </div>
+                      <div class="col-md-3">
+                          <input v-model="newEmployee.salary" type="number" class="form-control" placeholder="Salary">
+                      </div>
+                  </div>
+                  <button @click="addEmployee" class="btn btn-primary mt-3">Add Employee</button>
+              </div>
+          </div>
 
-            // Remove from users array
-            const users = JSON.parse(localStorage.getItem('users') || '[]');
-            const updatedUsers = users.filter(user => user.employeeId !== employeeId);
-
-            // Save updated data to localStorage
-            this.saveEmployees(updatedUsers);
-
-            // Show success message
-            Swal.fire({
-                title: "Deleted!",
-                text: "Employee has been deleted.",
-                icon: "success"
-            });
-        }
-    });
-},
-        saveEmployees(users) {
-            localStorage.setItem('employees', JSON.stringify(this.employees));
-            if (users) {
-                localStorage.setItem('users', JSON.stringify(users));
-            }
-        }
-    },
-    template: `
-        <div>
-        <NavigationHeader />
-            <h2>Employee Management</h2>
-            
-            <!-- Add Employee Form -->
-            <div class="card mb-4">
-                <div class="card-header">Add New Employee</div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-3">
-                            <input v-model="newEmployee.name" type="text" class="form-control" placeholder="Name" required>
-                        </div>
-                        <div class="col-md-3">
-                            <input v-model="newEmployee.position" type="text" class="form-control" placeholder="Position" required>
-                        </div>
-                        <div class="col-md-3">
-                            <input v-model="newEmployee.department" type="text" class="form-control" placeholder="Department" required>
-                        </div>
-                        <div class="col-md-3">
-                            <input v-model="newEmployee.salary" type="number" class="form-control" placeholder="Salary">
-                        </div>
-                    </div>
-                    <button @click="addEmployee" class="btn btn-primary mt-3">Add Employee</button>
-                </div>
-            </div>
-
-            <!-- Employees Table -->
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Position</th>
-                        <th>Department</th>
-                        <th>Salary</th>
-                        <th>Username</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr v-for="employee in employees" :key="employee.employeeId">
-                        <td>{{ employee.name }}</td>
-                        <td>{{ employee.position }}</td>
-                        <td>{{ employee.department }}</td>
-                        <td>{{ employee.salary }}</td>
-                        <td>{{ employee.username }}</td>
-                        <td>
-                            <button @click="regenerateCredentials(employee)" class="btn btn-sm btn-warning me-2">Reset Password</button>
-                            <button @click="deleteEmployee(employee.employeeId)" class="btn btn-sm btn-danger">Delete</button>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    `
+          <!-- Employees Table -->
+          <table class="table table-striped">
+              <thead>
+                  <tr>
+                      <th>Name</th>
+                      <th>Position</th>
+                      <th>Department</th>
+                      <th>Salary</th>
+                      <th>Username</th>
+                      <th>Actions</th>
+                  </tr>
+              </thead>
+              <tbody>
+                  <tr v-for="employee in employees" :key="employee.employeeId">
+                      <td @click="editCell(employee, 'name')" style="cursor: pointer;" class="editable-cell">
+                          {{ employee.name }}
+                      </td>
+                      <td @click="editCell(employee, 'position')" style="cursor: pointer;" class="editable-cell">
+                          {{ employee.position }}
+                      </td>
+                      <td @click="editCell(employee, 'department')" style="cursor: pointer;" class="editable-cell">
+                          {{ employee.department }}
+                      </td>
+                      <td @click="editCell(employee, 'salary')" style="cursor: pointer;" class="editable-cell">
+                          {{ employee.salary }}
+                      </td>
+                      <td>{{ employee.username }}</td>
+                      <td>
+                          <button @click="regenerateCredentials(employee)" class="btn btn-sm btn-warning me-2">Reset Password</button>
+                          <button @click="deleteEmployee(employee.employeeId)" class="btn btn-sm btn-danger">Delete</button>
+                      </td>
+                  </tr>
+              </tbody>
+          </table>
+      </div>
+  `,
+  styles: `
+      <style>
+      .editable-cell:hover {
+          background-color: #f5f5f5;
+          position: relative;
+      }
+      .editable-cell:hover::after {
+          content: "✎";
+          position: absolute;
+          right: 5px;
+          top: 50%;
+          transform: translateY(-50%);
+          opacity: 0.5;
+      }
+      </style>
+  `
 };
 
 const LeaveStatusChart = {
