@@ -441,3 +441,69 @@ button:hover {
         transform: translateY(0);
     }
 }
+
+
+.loader-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.loader {
+    width: 8px;
+    height: 40px;
+    border-radius: 4px;
+    display: block;
+    margin: 20px auto;
+    position: relative;
+    background: currentColor;
+    color: #FFF;
+    box-sizing: border-box;
+    animation: animloader 0.3s 0.3s linear infinite alternate;
+}
+
+.loader::after,
+.loader::before {
+    content: '';
+    width: 8px;
+    height: 40px;
+    border-radius: 4px;
+    background: currentColor;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    left: 20px;
+    box-sizing: border-box;
+    animation: animloader 0.3s 0.45s linear infinite alternate;
+}
+
+.loader::before {
+    left: -20px;
+    animation-delay: 0s;
+}
+
+@keyframes animloader {
+    0% {
+        height: 48px
+    }
+    100% {
+        height: 4px
+    }
+}
+
+/* Add fade transition for loader */
+.loader-overlay-enter-active,
+.loader-overlay-leave-active {
+    transition: opacity 0.3s;
+}
+
+.loader-overlay-enter-from,
+.loader-overlay-leave-to {
+    opacity: 0;}

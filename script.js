@@ -38,7 +38,13 @@ const initDataFromJSON = async () => {
       console.error('Error initializing employee data:', error);
     }
   };
-  
+  const LoaderOverlay = {
+    template: `
+        <div class="loader-overlay">
+            <span class="loader"></span>
+        </div>
+    `
+};
 
 // Login Component
 const Login = {
@@ -46,24 +52,36 @@ const Login = {
     return { 
       username: '', 
       password: '', 
-      errorMessage: '' 
+      errorMessage: '',
+      isLoading: false
     };
   },
+  components: {
+    LoaderOverlay
+},
   methods: {
-    login() {
-      const users = JSON.parse(localStorage.getItem('users') || '[]');
-      const user = users.find(u => u.username === this.username && u.password === this.password);
+    async login() {
+        this.isLoading = true;
+        
+        // Simulate network delay
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        const users = JSON.parse(localStorage.getItem('users') || '[]');
+        const user = users.find(u => u.username === this.username && u.password === this.password);
 
-      if (user) {
-        localStorage.setItem('loggedInUser', JSON.stringify(user));
-        this.$router.push(user.role === 'admin' ? '/admin-dashboard' : '/employee-dashboard');
-      } else {
-        this.errorMessage = 'Invalid credentials';
-      }
+        if (user) {
+            localStorage.setItem('loggedInUser', JSON.stringify(user));
+            this.$router.push(user.role === 'admin' ? '/admin-dashboard' : '/employee-dashboard');
+        } else {
+            this.errorMessage = 'Invalid credentials';
+        }
+        
+        this.isLoading = false;
     }
-  },
+},
   template: `
   <div class="container">
+  <LoaderOverlay v-if="isLoading" />
       <!-- Left Logo Section -->
       <div class="logo-section">
       <img src="asserts/final logo .png">
@@ -217,16 +235,33 @@ const Login = {
 };
 
 const NavigationHeader = {
+    data() {
+        return {
+            isLoading: false
+        };
+    },
+    components: {
+        LoaderOverlay
+    },
   methods: {
       goBack() {
           this.$router.go(-1);
       },
-      logout() {
-          localStorage.removeItem('loggedInUser');
-          this.$router.push('/');
-      }
-  },
+      async logout() {
+        this.isLoading = true;
+        
+        // Simulate network delay
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        localStorage.removeItem('loggedInUser');
+        this.$router.push('/');
+        
+        this.isLoading = false;
+    }
+},
   template: `
+  <div >
+  <LoaderOverlay v-if="isLoading" />
       <div class="d-flex justify-content-between align-items-center p-3 bg-light mb-4">
           <button @click="goBack" class="btn btn-secondary">
               <i class="fa-solid fa-arrow-left"></i> Back
@@ -234,6 +269,7 @@ const NavigationHeader = {
           <button @click="logout" class="btn btn-danger">
               <i class="fa-solid fa-right-from-bracket"></i> Logout
           </button>
+      </div>
       </div>
   `
 };
