@@ -85,7 +85,7 @@ const Login = {
       <!-- Left Logo Section -->
       <div class="logo-section">
       <img src="asserts/final logo .png">
-          <h1>ModernTech HR</h1>
+          <h1>Elevate IT</h1>
           <p>Clientele centered</p>
       </div>
 
