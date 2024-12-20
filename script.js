@@ -1,91 +1,105 @@
 // Initialize Data from JSON File
 const initDataFromJSON = async () => {
-    const users = JSON.parse(localStorage.getItem('users') || '[]');
-    const employees = JSON.parse(localStorage.getItem('employees') || '[]');
-    users.push({ role: "admin", password: "123admin!123", username: "HRAdmin" })
-    // Add admin credentials
-    if (!users.some(u => u.role === 'admin')) {
-   ;
-      localStorage.setItem('users', JSON.stringify(users));
-    }
-  
-    // Skip loading from JSON if employees already exist
-    if (employees.length > 0) return;
-  
-    try {
-      const response = await fetch('https://sivuyilemtwetwe.github.io/modernstaff-techhr-hub/');
-      if (!response.ok) throw new Error(`Failed to fetch employee data: ${response.status}`);
-  
-      const data = await response.json();
-      const loadedEmployees = data.employeeData.map(employee => {
-        const username = employee.name.toLowerCase().replace(/\s+/g, '.') + '.' + employee.employeeId;
-        const password = 'emp' + Math.floor(1000 + Math.random() * 9000);
-        users.push({ username, password, role: 'employee', employeeId: employee.employeeId });
-  
-        return {
-          ...employee,
-          username,
-          password,
-          attendance: employee.attendance || [], // Initialize attendance if missing
-          leaveRequests: employee.leaveRequests || [], // Initialize leave requests if missing
-        };
+  const users = JSON.parse(localStorage.getItem("users") || "[]");
+  const employees = JSON.parse(localStorage.getItem("employees") || "[]");
+  users.push({ role: "admin", password: "123admin!123", username: "HRAdmin" });
+  // Add admin credentials
+  if (!users.some((u) => u.role === "admin")) {
+    localStorage.setItem("users", JSON.stringify(users));
+  }
+
+  // Skip loading from JSON if employees already exist
+  if (employees.length > 0) return;
+
+  try {
+    const response = await fetch(
+      "https://sivuyilemtwetwe.github.io/modernstaff-techhr-hub/"
+    );
+    if (!response.ok)
+      throw new Error(`Failed to fetch employee data: ${response.status}`);
+
+    const data = await response.json();
+    const loadedEmployees = data.employeeData.map((employee) => {
+      const username =
+        employee.name.toLowerCase().replace(/\s+/g, ".") +
+        "." +
+        employee.employeeId;
+      const password = "emp" + Math.floor(1000 + Math.random() * 9000);
+      users.push({
+        username,
+        password,
+        role: "employee",
+        employeeId: employee.employeeId,
       });
-  
-      localStorage.setItem('employees', JSON.stringify(loadedEmployees));
-      localStorage.setItem('users', JSON.stringify(users));
-      console.log('Employee data initialized from JSON.');
-    } catch (error) {
-      console.error('Error initializing employee data:', error);
-    }
-  };
-  const LoaderOverlay = {
-    template: `
+
+      return {
+        ...employee,
+        username,
+        password,
+        attendance: employee.attendance || [], // Initialize attendance if missing
+        leaveRequests: employee.leaveRequests || [], // Initialize leave requests if missing
+      };
+    });
+
+    localStorage.setItem("employees", JSON.stringify(loadedEmployees));
+    localStorage.setItem("users", JSON.stringify(users));
+    console.log("Employee data initialized from JSON.");
+  } catch (error) {
+    console.error("Error initializing employee data:", error);
+  }
+};
+const LoaderOverlay = {
+  template: `
         <div class="loader-overlay">
             <span class="loader"></span>
         </div>
-    `
+    `,
 };
 
 // Login Component
 const Login = {
   data() {
-    return { 
-      username: '', 
-      password: '', 
-      errorMessage: '',
-      isLoading: false
+    return {
+      username: "",
+      password: "",
+      errorMessage: "",
+      isLoading: false,
     };
   },
   components: {
-    LoaderOverlay
-},
+    LoaderOverlay,
+  },
   methods: {
     async login() {
-        this.isLoading = true;
-        
-        // Simulate network delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        const users = JSON.parse(localStorage.getItem('users') || '[]');
-        const user = users.find(u => u.username === this.username && u.password === this.password);
+      this.isLoading = true;
 
-        if (user) {
-            localStorage.setItem('loggedInUser', JSON.stringify(user));
-            this.$router.push(user.role === 'admin' ? '/admin-dashboard' : '/employee-dashboard');
-        } else {
-            this.errorMessage = 'Invalid credentials';
-        }
-        
-        this.isLoading = false;
-    }
-},
+      // Simulate network delay
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      const users = JSON.parse(localStorage.getItem("users") || "[]");
+      const user = users.find(
+        (u) => u.username === this.username && u.password === this.password
+      );
+
+      if (user) {
+        localStorage.setItem("loggedInUser", JSON.stringify(user));
+        this.$router.push(
+          user.role === "admin" ? "/admin-dashboard" : "/employee-dashboard"
+        );
+      } else {
+        this.errorMessage = "Invalid credentials";
+      }
+
+      this.isLoading = false;
+    },
+  },
   template: `
   <div class="container">
   <LoaderOverlay v-if="isLoading" />
       <!-- Left Logo Section -->
       <div class="logo-section">
       <img src="asserts/final logo .png">
-          <h1>Elevate IT</h1>
+          <h1>Modern Tech Solutions</h1>
           <p>Clientele centered</p>
       </div>
 
@@ -231,34 +245,34 @@ const Login = {
           background-color: #0056b3;
       }
   </style>
-  `
+  `,
 };
 
 const NavigationHeader = {
-    data() {
-        return {
-            isLoading: false
-        };
-    },
-    components: {
-        LoaderOverlay
-    },
+  data() {
+    return {
+      isLoading: false,
+    };
+  },
+  components: {
+    LoaderOverlay,
+  },
   methods: {
-      goBack() {
-          this.$router.go(-1);
-      },
-      async logout() {
-        this.isLoading = true;
-        
-        // Simulate network delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        localStorage.removeItem('loggedInUser');
-        this.$router.push('/');
-        
-        this.isLoading = false;
-    }
-},
+    goBack() {
+      this.$router.go(-1);
+    },
+    async logout() {
+      this.isLoading = true;
+
+      // Simulate network delay
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      localStorage.removeItem("loggedInUser");
+      this.$router.push("/");
+
+      this.isLoading = false;
+    },
+  },
   template: `
   <div >
   <LoaderOverlay v-if="isLoading" />
@@ -271,23 +285,23 @@ const NavigationHeader = {
           </button>
       </div>
       </div>
-  `
+  `,
 };
 const PayrollManagement = {
   components: {
-    NavigationHeader
-},
-    data() {
-      return {
-        employees: JSON.parse(localStorage.getItem('employees') || '[]'),
-      };
+    NavigationHeader,
+  },
+  data() {
+    return {
+      employees: JSON.parse(localStorage.getItem("employees") || "[]"),
+    };
+  },
+  methods: {
+    calculateGrossSalary(employee) {
+      return (employee.hoursWorked || 0) * (employee.hourlyRate || 0);
     },
-    methods: {
-      calculateGrossSalary(employee) {
-        return (employee.hoursWorked || 0) * (employee.hourlyRate || 0);
-      },
-    },
-    template: `
+  },
+  template: `
       <div>
        <NavigationHeader />
         <h2>Payroll Management</h2>
@@ -303,105 +317,123 @@ const PayrollManagement = {
           <tbody>
             <tr v-for="employee in employees" :key="employee.employeeId">
               <td>{{ employee.name }}</td>
-              <td><input type="number" v-model="employee.hoursWorked" class="form-control" /></td>
-              <td><input type="number" v-model="employee.hourlyRate" class="form-control" /></td>
+              <td><input type="number" min="0" v-model="employee.hoursWorked" class="form-control" /></td>
+              <td><input type="number" min="0" v-model="employee.hourlyRate" class="form-control" /></td>
               <td><i class="fa-solid fa-equals"></i> {{ calculateGrossSalary(employee) }}</td>
             </tr>
           </tbody>
         </table>
       </div>
     `,
-  };
-  
+};
 
-  const TimeOffRequests = {
-    components: {
-        NavigationHeader
+const TimeOffRequests = {
+  components: {
+    NavigationHeader,
+  },
+  data() {
+    return {
+      groupedRequests: [],
+      employees: JSON.parse(localStorage.getItem("employees") || "[]"),
+    };
+  },
+  created() {
+    // Group requests by employee
+    this.groupedRequests = this.employees
+      .filter(
+        (employee) =>
+          employee.leaveRequests && employee.leaveRequests.length > 0
+      )
+      .map((employee) => ({
+        employeeName: employee.name,
+        employeeId: employee.employeeId,
+        department: employee.department,
+        requests: employee.leaveRequests.map((request) => ({
+          ...request,
+          employeeId: employee.employeeId,
+        })),
+      }));
+  },
+  methods: {
+    formatDate(dateString) {
+      return new Date(dateString).toLocaleDateString();
     },
-    data() {
-        return {
-            groupedRequests: [],
-            employees: JSON.parse(localStorage.getItem('employees') || '[]')
-        };
-    },
-    created() {
-        // Group requests by employee
-        this.groupedRequests = this.employees
-            .filter(employee => employee.leaveRequests && employee.leaveRequests.length > 0)
-            .map(employee => ({
-                employeeName: employee.name,
-                employeeId: employee.employeeId,
-                department: employee.department,
-                requests: employee.leaveRequests.map(request => ({
-                    ...request,
-                    employeeId: employee.employeeId
-                }))
-            }));
-    },
-    methods: {
-        formatDate(dateString) {
-            return new Date(dateString).toLocaleDateString();
-        },
-        approveRequest(request, employeeId) {
-            const employee = this.employees.find(emp => emp.employeeId === employeeId);
-            if (employee) {
-                const requestIndex = employee.leaveRequests.findIndex(req => 
-                    req.date === request.date && req.reason === request.reason
-                );
-                if (requestIndex !== -1) {
-                    employee.leaveRequests[requestIndex].status = 'Approved';
-                    localStorage.setItem('employees', JSON.stringify(this.employees));
-                    
-                    // Update the grouped requests
-                    const groupIndex = this.groupedRequests.findIndex(group => group.employeeId === employeeId);
-                    if (groupIndex !== -1) {
-                        const reqIndex = this.groupedRequests[groupIndex].requests.findIndex(req =>
-                            req.date === request.date && req.reason === request.reason
-                        );
-                        if (reqIndex !== -1) {
-                            this.groupedRequests[groupIndex].requests[reqIndex].status = 'Approved';
-                        }
-                    }
-                    
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Request Approved',
-                        text: 'The leave request has been approved successfully.'
-                    });
-                }
+    approveRequest(request, employeeId) {
+      const employee = this.employees.find(
+        (emp) => emp.employeeId === employeeId
+      );
+      if (employee) {
+        const requestIndex = employee.leaveRequests.findIndex(
+          (req) => req.date === request.date && req.reason === request.reason
+        );
+        if (requestIndex !== -1) {
+          employee.leaveRequests[requestIndex].status = "Approved";
+          localStorage.setItem("employees", JSON.stringify(this.employees));
+
+          // Update the grouped requests
+          const groupIndex = this.groupedRequests.findIndex(
+            (group) => group.employeeId === employeeId
+          );
+          if (groupIndex !== -1) {
+            const reqIndex = this.groupedRequests[
+              groupIndex
+            ].requests.findIndex(
+              (req) =>
+                req.date === request.date && req.reason === request.reason
+            );
+            if (reqIndex !== -1) {
+              this.groupedRequests[groupIndex].requests[reqIndex].status =
+                "Approved";
             }
-        },
-        denyRequest(request, employeeId) {
-            const employee = this.employees.find(emp => emp.employeeId === employeeId);
-            if (employee) {
-                const requestIndex = employee.leaveRequests.findIndex(req => 
-                    req.date === request.date && req.reason === request.reason
-                );
-                if (requestIndex !== -1) {
-                    employee.leaveRequests[requestIndex].status = 'Rejected';
-                    localStorage.setItem('employees', JSON.stringify(this.employees));
-                    
-                    // Update the grouped requests
-                    const groupIndex = this.groupedRequests.findIndex(group => group.employeeId === employeeId);
-                    if (groupIndex !== -1) {
-                        const reqIndex = this.groupedRequests[groupIndex].requests.findIndex(req =>
-                            req.date === request.date && req.reason === request.reason
-                        );
-                        if (reqIndex !== -1) {
-                            this.groupedRequests[groupIndex].requests[reqIndex].status = 'Rejected';
-                        }
-                    }
-                    
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Request Denied',
-                        text: 'The leave request has been rejected.'
-                    });
-                }
-            }
+          }
+
+          Swal.fire({
+            icon: "success",
+            title: "Request Approved",
+            text: "The leave request has been approved successfully.",
+          });
         }
+      }
     },
-    template: `
+    denyRequest(request, employeeId) {
+      const employee = this.employees.find(
+        (emp) => emp.employeeId === employeeId
+      );
+      if (employee) {
+        const requestIndex = employee.leaveRequests.findIndex(
+          (req) => req.date === request.date && req.reason === request.reason
+        );
+        if (requestIndex !== -1) {
+          employee.leaveRequests[requestIndex].status = "Rejected";
+          localStorage.setItem("employees", JSON.stringify(this.employees));
+
+          // Update the grouped requests
+          const groupIndex = this.groupedRequests.findIndex(
+            (group) => group.employeeId === employeeId
+          );
+          if (groupIndex !== -1) {
+            const reqIndex = this.groupedRequests[
+              groupIndex
+            ].requests.findIndex(
+              (req) =>
+                req.date === request.date && req.reason === request.reason
+            );
+            if (reqIndex !== -1) {
+              this.groupedRequests[groupIndex].requests[reqIndex].status =
+                "Rejected";
+            }
+          }
+
+          Swal.fire({
+            icon: "success",
+            title: "Request Denied",
+            text: "The leave request has been rejected.",
+          });
+        }
+      }
+    },
+  },
+  template: `
         <div class="container-fluid">
             <NavigationHeader />
             <div class="card">
@@ -480,46 +512,48 @@ const PayrollManagement = {
                 </div>
             </div>
         </div>
-    `
+    `,
 };
-  
-  const AttendanceTracking = {
-    components: {
-      NavigationHeader
+
+const AttendanceTracking = {
+  components: {
+    NavigationHeader,
   },
-    data() {
-        return {
-            employees: JSON.parse(localStorage.getItem('employees') || '[]'),
-        };
+  data() {
+    return {
+      employees: JSON.parse(localStorage.getItem("employees") || "[]"),
+    };
+  },
+  computed: {
+    // Group attendance data by employee
+    employeesWithAttendance() {
+      return this.employees.filter(
+        (emp) => emp.attendance && emp.attendance.length > 0
+      );
     },
-    computed: {
-        // Group attendance data by employee
-        employeesWithAttendance() {
-            return this.employees.filter(emp => emp.attendance && emp.attendance.length > 0);
-        }
+  },
+  methods: {
+    formatDate(dateString) {
+      return new Date(dateString).toLocaleDateString();
     },
-    methods: {
-        formatDate(dateString) {
-            return new Date(dateString).toLocaleDateString();
-        },
-        getStatusClass(status) {
-            return {
-                'badge': true,
-                'bg-success': status === 'Present',
-                'bg-danger': status === 'Absent',
-                'bg-warning': status === 'Late'
-            };
-        },
-        saveAttendance() {
-            localStorage.setItem('employees', JSON.stringify(this.employees));
-            Swal.fire({
-                icon: 'success',
-                title: 'Data Saved',
-                text: 'Attendance data saved successfully!'
-            });
-        }
+    getStatusClass(status) {
+      return {
+        badge: true,
+        "bg-success": status === "Present",
+        "bg-danger": status === "Absent",
+        "bg-warning": status === "Late",
+      };
     },
-    template: `
+    saveAttendance() {
+      localStorage.setItem("employees", JSON.stringify(this.employees));
+      Swal.fire({
+        icon: "success",
+        title: "Data Saved",
+        text: "Attendance data saved successfully!",
+      });
+    },
+  },
+  template: `
      <NavigationHeader />
         <div class="container-fluid">
             <div class="row">
@@ -589,112 +623,122 @@ const PayrollManagement = {
                 </div>
             </div>
         </div>
-    `
+    `,
 };
 
 const EmployeeDashboard = {
   components: {
-    NavigationHeader
-},
+    NavigationHeader,
+  },
   data() {
     return {
       employee: {}, // Current logged-in employee
-      timeOffReason: '',
-      attendanceStatus: 'Present',
+      timeOffReason: "",
+      attendanceStatus: "Present",
       paySlipModal: false,
-      paySlipStartDate: '',
-      paySlipEndDate: '',
-      generatedPaySlip: null
+      paySlipStartDate: "",
+      paySlipEndDate: "",
+      generatedPaySlip: null,
     };
   },
   mounted() {
-    const user = JSON.parse(localStorage.getItem('loggedInUser'));
-    const employees = JSON.parse(localStorage.getItem('employees') || '[]');
-    this.employee = employees.find(emp => emp.employeeId === user.employeeId) || {};
+    const user = JSON.parse(localStorage.getItem("loggedInUser"));
+    const employees = JSON.parse(localStorage.getItem("employees") || "[]");
+    this.employee =
+      employees.find((emp) => emp.employeeId === user.employeeId) || {};
   },
   methods: {
     markAttendance() {
-      const today = new Date().toISOString().split('T')[0];
-      if (this.employee.attendance.some(att => att.date === today)) {
+      const today = new Date().toISOString().split("T")[0];
+      if (this.employee.attendance.some((att) => att.date === today)) {
         Swal.fire({
-            icon: 'warning',
-            title: 'Attendance Already Marked',
-            text: 'Attendance for today is already marked.'
+          icon: "warning",
+          title: "Attendance Already Marked",
+          text: "Attendance for today is already marked.",
         });
         return;
-    }
-    
-    // After marking attendance
-    Swal.fire({
-        icon: 'success',
-        title: 'Attendance Marked',
-        text: 'Attendance marked successfully!'
-    });
+      }
 
-      this.employee.attendance.push({ date: today, status: this.attendanceStatus });
+      // After marking attendance
+      Swal.fire({
+        icon: "success",
+        title: "Attendance Marked",
+        text: "Attendance marked successfully!",
+      });
+
+      this.employee.attendance.push({
+        date: today,
+        status: this.attendanceStatus,
+      });
       this.saveEmployeeData();
-      
+
       // Update attendance data in localStorage
-      const attendanceData = JSON.parse(localStorage.getItem('attendanceData') || '[]');
+      const attendanceData = JSON.parse(
+        localStorage.getItem("attendanceData") || "[]"
+      );
       attendanceData.push({
         employeeName: this.employee.name,
         date: today,
-        status: this.attendanceStatus
+        status: this.attendanceStatus,
       });
       // localStorage.setItem('attendanceData', JSON.stringify(attendanceData));
-      
+
       // alert('Attendance marked successfully!');
     },
     requestTimeOff() {
       if (!this.timeOffReason) {
         Swal.fire({
-            icon: 'error',
-            title: 'Incomplete Information',
-            text: 'Please provide a reason for the time-off request.'
+          icon: "error",
+          title: "Incomplete Information",
+          text: "Please provide a reason for the time-off request.",
         });
         return;
-    }
-    
-    // After submitting time off request
-    Swal.fire({
-        icon: 'success',
-        title: 'Request Submitted',
-        text: 'Time-off request submitted successfully!'
-    });
+      }
+
+      // After submitting time off request
+      Swal.fire({
+        icon: "success",
+        title: "Request Submitted",
+        text: "Time-off request submitted successfully!",
+      });
 
       this.employee.leaveRequests.push({
-        date: new Date().toISOString().split('T')[0],
+        date: new Date().toISOString().split("T")[0],
         reason: this.timeOffReason,
-        status: 'Pending',
+        status: "Pending",
       });
       this.saveEmployeeData();
       // alert('Time-off request submitted successfully!');
-      this.timeOffReason = '';
+      this.timeOffReason = "";
     },
     saveEmployeeData() {
-      const employees = JSON.parse(localStorage.getItem('employees') || '[]');
-      const index = employees.findIndex(emp => emp.employeeId === this.employee.employeeId);
+      const employees = JSON.parse(localStorage.getItem("employees") || "[]");
+      const index = employees.findIndex(
+        (emp) => emp.employeeId === this.employee.employeeId
+      );
       if (index > -1) employees[index] = this.employee;
-      localStorage.setItem('employees', JSON.stringify(employees));
+      localStorage.setItem("employees", JSON.stringify(employees));
     },
     generatePaySlip() {
       // Validate date range
       if (!this.paySlipStartDate || !this.paySlipEndDate) {
         Swal.fire({
-            icon: 'error',
-            title: 'Incomplete Information',
-            text: 'Please select both start and end dates'
+          icon: "error",
+          title: "Incomplete Information",
+          text: "Please select both start and end dates",
         });
         return;
-    }
+      }
 
       const startDate = new Date(this.paySlipStartDate);
       const endDate = new Date(this.paySlipEndDate);
 
       // Calculate days worked
-      const attendanceInPeriod = this.employee.attendance.filter(att => {
+      const attendanceInPeriod = this.employee.attendance.filter((att) => {
         const attDate = new Date(att.date);
-        return attDate >= startDate && attDate <= endDate && att.status === 'Present';
+        return (
+          attDate >= startDate && attDate <= endDate && att.status === "Present"
+        );
       });
 
       // Calculate working days
@@ -722,9 +766,9 @@ const EmployeeDashboard = {
         hourlyRate: hourlyRate,
         hoursWorked: hoursWorked,
         grossSalary: grossSalary.toFixed(2),
-        taxRate: (taxRate * 100) + '%',
+        taxRate: taxRate * 100 + "%",
         tax: tax.toFixed(2),
-        netSalary: netSalary.toFixed(2)
+        netSalary: netSalary.toFixed(2),
       };
 
       // Optional: Save pay slip to employee's records
@@ -773,11 +817,11 @@ const EmployeeDashboard = {
         </html>
       `;
 
-      const printWindow = window.open('', '', 'height=500, width=500');
+      const printWindow = window.open("", "", "height=500, width=500");
       printWindow.document.write(printContent);
       printWindow.document.close();
       printWindow.print();
-    }
+    },
   },
   template: `
     <div>
@@ -843,25 +887,25 @@ const EmployeeDashboard = {
     </div>
   `,
 };
-  
 
-  const DataVisualization = {
+const DataVisualization = {
     mounted() {
-      const ctx = document.getElementById('attendanceChart').getContext('2d');
+      const ctx = document.getElementById("attendanceChart").getContext("2d");
       new Chart(ctx, {
-        type: 'bar',
+        type: "bar",
         data: {
-          labels: ['Present', 'Absent'],
+          labels: ["Present", "Absent"],
           datasets: [
             {
-              label: '# of Days',
-              data: [20, 5], // Replace with dynamic data
-              backgroundColor: ['#4caf50', '#f44336'],
+              label: "# of Days",
+              data: [20, 5],
+              backgroundColor: ["#4caf50", "#f44336"],
             },
           ],
         },
         options: {
           responsive: true,
+          maintainAspectRatio: true,
           scales: {
             y: {
               beginAtZero: true,
@@ -871,77 +915,82 @@ const EmployeeDashboard = {
       });
     },
     template: `
-      <div>
-        <h2>Attendance Report</h2>
-        <canvas id="attendanceChart"></canvas>
-      </div>
-    `,
+        <div>
+          <h2>Attendance Report</h2>
+          <div style="width: 400px; height: 300px; margin: 0 auto;">
+            <canvas id="attendanceChart"></canvas>
+          </div>
+        </div>
+      `,
   };
 
-  const AdminDashboard = {
-    components: {
-        NavigationHeader
-    },
-    data() {
-        return {
-            employees: JSON.parse(localStorage.getItem('employees') || '[]'),
-            navigationCards: [
-                { 
-                    title: 'Employee Management',
-                    route: '/employees',
-                    icon: '<i class="fas fa-users"></i>',
-                    description: 'Manage employee records, add new employees, and update information'
-                },
-                { 
-                    title: 'Payroll',
-                    route: '/payroll',
-                    icon: '<i class="fas fa-credit-card"></i>',
-                    description: 'Process payroll and manage salary information'
-                },
-                { 
-                    title: 'Attendance',
-                    route: '/attendance',
-                    icon: '<i class="fas fa-clock"></i>',
-                    description: 'Track and monitor employee attendance'
-                },
-                { 
-                    title: 'Leave Requests',
-                    route: '/time-off',
-                    icon: '<i class="fas fa-calendar"></i>',
-                    description: 'Manage employee leave requests and approvals'
-                },
-                { 
-                    title: 'Salary Analytics',
-                    route: '/salary-visualization',
-                    icon: '<i class="fas fa-chart-bar"></i>',
-                    description: 'View salary distribution and analytics'
-                },
-                { 
-                    title: 'Attendance Trends',
-                    route: '/attendance-trends',
-                    icon: '<i class="fas fa-chart-line"></i>',
-                    description: 'Analyze attendance patterns and trends'
-                },
-                { 
-                    title: 'Leave Status Overview',
-                    route: '/leave-status',
-                    icon: '<i class="fas fa-chart-pie"></i>',
-                    description: 'View overall leave request statistics'
-                }
-            ]
-        };
-    },
-    computed: {
-        employeesWithRequests() {
-            return this.employees.filter(emp => emp.leaveRequests && emp.leaveRequests.length > 0);
-        }
-    },
-    methods: {
-        navigateTo(route) {
-            this.$router.push(route);
+const AdminDashboard = {
+  components: {
+    NavigationHeader,
+  },
+  data() {
+    return {
+      employees: JSON.parse(localStorage.getItem("employees") || "[]"),
+      navigationCards: [
+        {
+          title: "Employee Management",
+          route: "/employees",
+          icon: '<i class="fas fa-users"></i>',
+          description:
+            "Manage employee records, add new employees, and update information",
         },
+        {
+          title: "Payroll",
+          route: "/payroll",
+          icon: '<i class="fas fa-credit-card"></i>',
+          description: "Process payroll and manage salary information",
+        },
+        {
+          title: "Attendance",
+          route: "/attendance",
+          icon: '<i class="fas fa-clock"></i>',
+          description: "Track and monitor employee attendance",
+        },
+        {
+          title: "Leave Requests",
+          route: "/time-off",
+          icon: '<i class="fas fa-calendar"></i>',
+          description: "Manage employee leave requests and approvals",
+        },
+        {
+          title: "Salary Analytics",
+          route: "/salary-visualization",
+          icon: '<i class="fas fa-chart-bar"></i>',
+          description: "View salary distribution and analytics",
+        },
+        {
+          title: "Attendance Trends",
+          route: "/attendance-trends",
+          icon: '<i class="fas fa-chart-line"></i>',
+          description: "Analyze attendance patterns and trends",
+        },
+        {
+          title: "Leave Status Overview",
+          route: "/leave-status",
+          icon: '<i class="fas fa-chart-pie"></i>',
+          description: "View overall leave request statistics",
+        },
+      ],
+    };
+  },
+  computed: {
+    employeesWithRequests() {
+      return this.employees.filter(
+        (emp) => emp.leaveRequests && emp.leaveRequests.length > 0
+      );
     },
-    template: `
+  },
+  methods: {
+    navigateTo(route) {
+      this.$router.push(route);
+    },
+  },
+  template: `
     <div>
         <NavigationHeader />
         <div class="container-fluid p-4">
@@ -1009,7 +1058,7 @@ const EmployeeDashboard = {
         </div>
     </div>
     `,
-    styles: `
+  styles: `
         <style>
         .hover-card {
             transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
@@ -1026,201 +1075,221 @@ const EmployeeDashboard = {
             margin-right: 10px;
         }
         </style>
-    `
+    `,
 };
-  
 
 // Employee Management Component (Admin)
 const EmployeeManagement = {
   components: {
-      NavigationHeader
+    NavigationHeader,
   },
   data() {
-      return {
-          employees: JSON.parse(localStorage.getItem('employees') || '[]'),
-          newEmployee: {
-              name: '',
-              position: '',
-              department: '',
-              salary: '',
-              employeeId: '',
-              username: '',
-              password: '',
-              attendance: [],
-              leaveRequests: []
-          },
-          editableFields: ['name', 'position', 'department', 'salary']
-      };
+    return {
+      employees: JSON.parse(localStorage.getItem("employees") || "[]"),
+      newEmployee: {
+        name: "",
+        position: "",
+        department: "",
+        salary: "",
+        employeeId: "",
+        username: "",
+        password: "",
+        attendance: [],
+        leaveRequests: [],
+      },
+      editableFields: ["name", "position", "department", "salary"],
+    };
   },
   methods: {
-      async editCell(employee, field) {
-          const currentValue = employee[field];
-          
-          let inputType = 'text';
-          if (field === 'salary') {
-              inputType = 'number';
-          }
+    async editCell(employee, field) {
+      const currentValue = employee[field];
 
-          const capitalisedField = field.charAt(0).toUpperCase() + field.slice(1);
-          
-          const { value: newValue } = await Swal.fire({
-              title: `Edit ${capitalisedField}`,
-              input: inputType,
-              inputLabel: `Enter new ${field}`,
-              inputValue: currentValue,
-              showCancelButton: true,
-              inputValidator: (value) => {
-                  if (!value) {
-                      return `${capitalisedField} cannot be empty!`;
-                  }
-                  if (field === 'salary' && value < 0) {
-                      return 'Salary cannot be negative!';
-                  }
-              }
-          });
+      let inputType = "text";
+      if (field === "salary") {
+        inputType = "number";
+      }
 
-          if (newValue) {
-              // Update the employee data
-              employee[field] = field === 'salary' ? parseFloat(newValue) : newValue;
-              
-              // If name is changed, update username
-              if (field === 'name') {
-                  const newUsername = newValue.toLowerCase().replace(/\s+/g, '.') + '.' + employee.employeeId;
-                  employee.username = newUsername;
-                  
-                  // Update username in users array
-                  const users = JSON.parse(localStorage.getItem('users') || '[]');
-                  const userIndex = users.findIndex(u => u.employeeId === employee.employeeId);
-                  if (userIndex !== -1) {
-                      users[userIndex].username = newUsername;
-                      localStorage.setItem('users', JSON.stringify(users));
-                  }
-              }
+      const capitalisedField = field.charAt(0).toUpperCase() + field.slice(1);
 
-              // Save changes
-              this.saveEmployees();
+      const { value: newValue } = await Swal.fire({
+        title: `Edit ${capitalisedField}`,
+        input: inputType,
+        inputLabel: `Enter new ${field}`,
+        inputValue: currentValue,
+        showCancelButton: true,
+        inputValidator: (value) => {
+          if (!value) {
+            return `${capitalisedField} cannot be empty!`;
+          }
+          if (field === "salary" && value < 0) {
+            return "Salary cannot be negative!";
+          }
+        },
+      });
 
-              // Show success message
-              await Swal.fire({
-                  icon: 'success',
-                  title: 'Updated!',
-                  text: `${capitalisedField} has been updated successfully.`,
-                  timer: 1500
-              });
+      if (newValue) {
+        // Update the employee data
+        employee[field] = field === "salary" ? parseFloat(newValue) : newValue;
+
+        // If name is changed, update username
+        if (field === "name") {
+          const newUsername =
+            newValue.toLowerCase().replace(/\s+/g, ".") +
+            "." +
+            employee.employeeId;
+          employee.username = newUsername;
+
+          // Update username in users array
+          const users = JSON.parse(localStorage.getItem("users") || "[]");
+          const userIndex = users.findIndex(
+            (u) => u.employeeId === employee.employeeId
+          );
+          if (userIndex !== -1) {
+            users[userIndex].username = newUsername;
+            localStorage.setItem("users", JSON.stringify(users));
           }
-      },
-      regenerateCredentials(employee) {
-          const users = JSON.parse(localStorage.getItem('users') || '[]');
-          const password = 'emp' + Math.floor(1000 + Math.random() * 9000);
-      
-          // Update credentials in the users array
-          const user = users.find(u => u.employeeId === employee.employeeId);
-          if (user) {
-              user.password = password;
-          } else {
-              users.push({ username: employee.username, password, role: 'employee', employeeId: employee.employeeId });
-          }
-      
-          // Update employee data
-          employee.password = password;
-      
-          // Save updated data to localStorage
-          this.saveEmployees(users);
-      
-          Swal.fire({
-              icon: 'success',
-              title: 'Credentials Updated',
-              text: `New Password: ${password}`,
-              footer: 'Please ensure the employee changes this password'
-          });
-      },
-      addEmployee() {
-          if (!this.newEmployee.name || !this.newEmployee.position || !this.newEmployee.department) {
-              Swal.fire({
-                  icon: 'error',
-                  title: 'Incomplete Information',
-                  text: 'Please fill in all required fields'
-              });
-              return;
-          }
-      
-          const employeeId = Date.now().toString();
-          const username = this.newEmployee.name.toLowerCase().replace(/\s+/g, '.') + '.' + employeeId;
-          const password = 'emp' + Math.floor(1000 + Math.random() * 9000);
-      
-          const employeeToAdd = {
-              ...this.newEmployee,
-              employeeId,
-              username,
-              password,
-              attendance: [],
-              leaveRequests: []
-          };
-      
-          this.employees.push(employeeToAdd);
-      
-          const users = JSON.parse(localStorage.getItem('users') || '[]');
-          users.push({
-              username,
-              password,
-              role: 'employee',
-              employeeId
-          });
-      
-          this.saveEmployees(users);
-      
-          this.newEmployee = {
-              name: '',
-              position: '',
-              department: '',
-              salary: '',
-              employeeId: '',
-              username: '',
-              password: ''
-          };
-      
-          Swal.fire({
-              icon: 'success',
-              title: 'Employee Added Successfully!',
-              html: `
+        }
+
+        // Save changes
+        this.saveEmployees();
+
+        // Show success message
+        await Swal.fire({
+          icon: "success",
+          title: "Updated!",
+          text: `${capitalisedField} has been updated successfully.`,
+          timer: 1500,
+        });
+      }
+    },
+    regenerateCredentials(employee) {
+      const users = JSON.parse(localStorage.getItem("users") || "[]");
+      const password = "emp" + Math.floor(1000 + Math.random() * 9000);
+
+      // Update credentials in the users array
+      const user = users.find((u) => u.employeeId === employee.employeeId);
+      if (user) {
+        user.password = password;
+      } else {
+        users.push({
+          username: employee.username,
+          password,
+          role: "employee",
+          employeeId: employee.employeeId,
+        });
+      }
+
+      // Update employee data
+      employee.password = password;
+
+      // Save updated data to localStorage
+      this.saveEmployees(users);
+
+      Swal.fire({
+        icon: "success",
+        title: "Credentials Updated",
+        text: `New Password: ${password}`,
+        footer: "Please ensure the employee changes this password",
+      });
+    },
+    addEmployee() {
+      if (
+        !this.newEmployee.name ||
+        !this.newEmployee.position ||
+        !this.newEmployee.department
+      ) {
+        Swal.fire({
+          icon: "error",
+          title: "Incomplete Information",
+          text: "Please fill in all required fields",
+        });
+        return;
+      }
+
+      const employeeId = Date.now().toString();
+      const username =
+        this.newEmployee.name.toLowerCase().replace(/\s+/g, ".") +
+        "." +
+        employeeId;
+      const password = "emp" + Math.floor(1000 + Math.random() * 9000);
+
+      const employeeToAdd = {
+        ...this.newEmployee,
+        employeeId,
+        username,
+        password,
+        attendance: [],
+        leaveRequests: [],
+      };
+
+      this.employees.push(employeeToAdd);
+
+      const users = JSON.parse(localStorage.getItem("users") || "[]");
+      users.push({
+        username,
+        password,
+        role: "employee",
+        employeeId,
+      });
+
+      this.saveEmployees(users);
+
+      this.newEmployee = {
+        name: "",
+        position: "",
+        department: "",
+        salary: "",
+        employeeId: "",
+        username: "",
+        password: "",
+      };
+
+      Swal.fire({
+        icon: "success",
+        title: "Employee Added Successfully!",
+        html: `
                   <p>Username: ${username}</p>
                   <p>Password: ${password}</p>
               `,
-              footer: 'Please share credentials securely with the employee'
-          });
-      },
-      deleteEmployee(employeeId) {
+        footer: "Please share credentials securely with the employee",
+      });
+    },
+    deleteEmployee(employeeId) {
+      Swal.fire({
+        title: "Are you sure?",
+        text: "You won't be able to revert this!",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Yes, delete it!",
+      }).then((result) => {
+        if (result.isConfirmed) {
+          this.employees = this.employees.filter(
+            (emp) => emp.employeeId !== employeeId
+          );
+
+          const users = JSON.parse(localStorage.getItem("users") || "[]");
+          const updatedUsers = users.filter(
+            (user) => user.employeeId !== employeeId
+          );
+
+          this.saveEmployees(updatedUsers);
+
           Swal.fire({
-              title: "Are you sure?",
-              text: "You won't be able to revert this!",
-              icon: "warning",
-              showCancelButton: true,
-              confirmButtonColor: "#3085d6",
-              cancelButtonColor: "#d33",
-              confirmButtonText: "Yes, delete it!"
-          }).then((result) => {
-              if (result.isConfirmed) {
-                  this.employees = this.employees.filter(emp => emp.employeeId !== employeeId);
-                  
-                  const users = JSON.parse(localStorage.getItem('users') || '[]');
-                  const updatedUsers = users.filter(user => user.employeeId !== employeeId);
-                  
-                  this.saveEmployees(updatedUsers);
-                  
-                  Swal.fire({
-                      title: "Deleted!",
-                      text: "Employee has been deleted.",
-                      icon: "success"
-                  });
-              }
+            title: "Deleted!",
+            text: "Employee has been deleted.",
+            icon: "success",
           });
-      },
-      saveEmployees(users) {
-          localStorage.setItem('employees', JSON.stringify(this.employees));
-          if (users) {
-              localStorage.setItem('users', JSON.stringify(users));
-          }
+        }
+      });
+    },
+    saveEmployees(users) {
+      localStorage.setItem("employees", JSON.stringify(this.employees));
+      if (users) {
+        localStorage.setItem("users", JSON.stringify(users));
       }
+    },
   },
   template: `
       <div>
@@ -1242,7 +1311,7 @@ const EmployeeManagement = {
                           <input v-model="newEmployee.department" type="text" class="form-control" placeholder="Department" required>
                       </div>
                       <div class="col-md-3">
-                          <input v-model="newEmployee.salary" type="number" class="form-control" placeholder="Salary">
+                          <input v-model="newEmployee.salary" type="number" min="0" class="form-control" placeholder="Salary">
                       </div>
                   </div>
                   <button @click="addEmployee" class="btn btn-primary mt-3"><i class="fa-solid fa-user-plus"></i> Add Employee</button>
@@ -1300,178 +1369,210 @@ const EmployeeManagement = {
           opacity: 0.5;
       }
       </style>
-  `
+  `,
 };
 
 const LeaveStatusChart = {
-  components: {
-    NavigationHeader
-},
-  mounted() {
-      const ctx = document.getElementById('leaveStatusChart').getContext('2d');
-      const employees = JSON.parse(localStorage.getItem('employees') || '[]');
+    components: {
+      NavigationHeader,
+    },
+    mounted() {
+      const ctx = document.getElementById("leaveStatusChart").getContext("2d");
+      const employees = JSON.parse(localStorage.getItem("employees") || "[]");
       const leaveStatuses = { Approved: 0, Pending: 0, Rejected: 0 };
-
-      employees.forEach(emp => {
-          emp.leaveRequests.forEach(req => {
-              leaveStatuses[req.status] += 1;
-          });
+  
+      employees.forEach((emp) => {
+        emp.leaveRequests.forEach((req) => {
+          leaveStatuses[req.status] += 1;
+        });
       });
-
+  
       new Chart(ctx, {
-          type: 'pie',
-          data: {
-              labels: Object.keys(leaveStatuses),
-              datasets: [{
-                  data: Object.values(leaveStatuses),
-                  backgroundColor: ['#4caf50', '#ff9800', '#f44336']
-              }]
-          },
-          options: {
-              responsive: true
-          }
+        type: "pie",
+        data: {
+          labels: Object.keys(leaveStatuses),
+          datasets: [
+            {
+              data: Object.values(leaveStatuses),
+              backgroundColor: ["#4caf50", "#ff9800", "#f44336"],
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+        },
       });
-  },
-  template: `
-      <div>
-      <NavigationHeader />
-          <h2>Leave Request Status</h2>
-          <canvas id="leaveStatusChart"></canvas>
-      </div>
-  `
-};
+    },
+    template: `
+        <div>
+        <NavigationHeader />
+            <h2>Leave Request Status</h2>
+            <div style="width: 400px; height: 300px; margin: 0 auto;">
+              <canvas id="leaveStatusChart"></canvas>
+            </div>
+        </div>
+    `,
+  };
 
-const AttendanceTrendChart = {
-  components: {
-    NavigationHeader
-},
-  mounted() {
-      const ctx = document.getElementById('attendanceTrendChart').getContext('2d');
-      const employees = JSON.parse(localStorage.getItem('employees') || '[]');
+  const AttendanceTrendChart = {
+    components: {
+      NavigationHeader,
+    },
+    mounted() {
+      const ctx = document.getElementById("attendanceTrendChart").getContext("2d");
+      const employees = JSON.parse(localStorage.getItem("employees") || "[]");
       const attendanceCounts = { Present: 0, Absent: 0 };
-
-      employees.forEach(emp => {
-          emp.attendance.forEach(att => {
-              attendanceCounts[att.status] += 1;
-          });
+  
+      employees.forEach((emp) => {
+        emp.attendance.forEach((att) => {
+          attendanceCounts[att.status] += 1;
+        });
       });
-
+  
       new Chart(ctx, {
-          type: 'line',
-          data: {
-              labels: Object.keys(attendanceCounts),
-              datasets: [{
-                  label: 'Attendance Trend',
-                  data: Object.values(attendanceCounts),
-                  backgroundColor: 'rgba(75,192,192,0.4)',
-                  borderColor: 'rgba(75,192,192,1)',
-                  fill: true
-              }]
+        type: "line",
+        data: {
+          labels: Object.keys(attendanceCounts),
+          datasets: [
+            {
+              label: "Attendance Trend",
+              data: Object.values(attendanceCounts),
+              backgroundColor: "rgba(75,192,192,0.4)",
+              borderColor: "rgba(75,192,192,1)",
+              fill: true,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          scales: {
+            y: {
+              beginAtZero: true,
+            },
           },
-          options: {
-              responsive: true,
-              scales: {
-                  y: {
-                      beginAtZero: true
-                  }
-              }
-          }
+        },
       });
-  },
-  template: `
-      <div>
-      <NavigationHeader />
-          <h2>Attendance Trends</h2>
-          <canvas id="attendanceTrendChart"></canvas>
-      </div>
-  `
-};
+    },
+    template: `
+        <div>
+        <NavigationHeader />
+            <h2>Attendance Trends</h2>
+            <div style="width: 500px; height: 300px; margin: 0 auto;">
+              <canvas id="attendanceTrendChart"></canvas>
+            </div>
+        </div>
+    `,
+  };
 
-const SalaryChart = {
-  components: {
-    NavigationHeader
-},
-  mounted() {
-      const ctx = document.getElementById('salaryChart').getContext('2d');
-      const employees = JSON.parse(localStorage.getItem('employees') || '[]');
+  const SalaryChart = {
+    components: {
+      NavigationHeader,
+    },
+    mounted() {
+      const ctx = document.getElementById("salaryChart").getContext("2d");
+      const employees = JSON.parse(localStorage.getItem("employees") || "[]");
       const departments = employees.reduce((acc, emp) => {
-          acc[emp.department] = (acc[emp.department] || 0) + emp.salary;
-          return acc;
+        acc[emp.department] = (acc[emp.department] || 0) + emp.salary;
+        return acc;
       }, {});
-
+  
       new Chart(ctx, {
-          type: 'bar',
-          data: {
-              labels: Object.keys(departments),
-              datasets: [{
-                  label: 'Total Salary',
-                  data: Object.values(departments),
-                  backgroundColor: '#4caf50'
-              }]
+        type: "bar",
+        data: {
+          labels: Object.keys(departments),
+          datasets: [
+            {
+              label: "Total Salary",
+              data: Object.values(departments),
+              backgroundColor: "#4caf50",
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          scales: {
+            y: {
+              beginAtZero: true,
+            },
           },
-          options: {
-              responsive: true,
-              scales: {
-                  y: {
-                      beginAtZero: true
-                  }
-              }
-          }
+        },
       });
-  },
-  template: `
-      <div>
-      <NavigationHeader />
-          <h2>Department-Wise Salary</h2>
-          <canvas id="salaryChart"></canvas>
-      </div>
-  `
-};
-
-    
+    },
+    template: `
+        <div>
+        <NavigationHeader />
+            <h2>Department-Wise Salary</h2>
+            <div style="width: 500px; height: 300px; margin: 0 auto;">
+              <canvas id="salaryChart"></canvas>
+            </div>
+        </div>
+    `,
+  };
 
 // Router Configuration
 const routes = [
-    { path: '/', component: Login },
-    { path: '/employees', component: EmployeeManagement, meta: { role: 'admin' } },
-    { path: '/payroll', component: PayrollManagement, meta: { role: 'admin' } },
-    { path: '/time-off', component: TimeOffRequests, meta: { role: 'admin' } },
-    { path: '/attendance', component: AttendanceTracking, meta: { role: 'admin' } },
-    { path: '/visualization', component: DataVisualization, meta: { role: 'admin' } },
-    { path: '/employee-dashboard', component: EmployeeDashboard, meta: { role: 'employee' } },
-    { path: '/salary-visualization', component: SalaryChart },
-    { path: '/attendance-trends', component: AttendanceTrendChart },
-    { path: '/leave-status', component: LeaveStatusChart },
-    { path: '/admin-dashboard', component: AdminDashboard, meta: { role: 'admin' } }
-  ];
-  
-  const router = VueRouter.createRouter({
-    history: VueRouter.createWebHashHistory(),
-    routes,
-  });
-  
+  { path: "/", component: Login },
+  {
+    path: "/employees",
+    component: EmployeeManagement,
+    meta: { role: "admin" },
+  },
+  { path: "/payroll", component: PayrollManagement, meta: { role: "admin" } },
+  { path: "/time-off", component: TimeOffRequests, meta: { role: "admin" } },
+  {
+    path: "/attendance",
+    component: AttendanceTracking,
+    meta: { role: "admin" },
+  },
+  {
+    path: "/visualization",
+    component: DataVisualization,
+    meta: { role: "admin" },
+  },
+  {
+    path: "/employee-dashboard",
+    component: EmployeeDashboard,
+    meta: { role: "employee" },
+  },
+  { path: "/salary-visualization", component: SalaryChart },
+  { path: "/attendance-trends", component: AttendanceTrendChart },
+  { path: "/leave-status", component: LeaveStatusChart },
+  {
+    path: "/admin-dashboard",
+    component: AdminDashboard,
+    meta: { role: "admin" },
+  },
+];
+
+const router = VueRouter.createRouter({
+  history: VueRouter.createWebHashHistory(),
+  routes,
+});
 
 router.beforeEach((to, from, next) => {
-    const user = JSON.parse(localStorage.getItem('loggedInUser') || '{}');
-    if (to.meta.role && to.meta.role !== user.role) {
-        next('/');
-    } else {
-        next();
-    }
+  const user = JSON.parse(localStorage.getItem("loggedInUser") || "{}");
+  if (to.meta.role && to.meta.role !== user.role) {
+    next("/");
+  } else {
+    next();
+  }
 });
 
 // Vue App
 const app = Vue.createApp({
   data() {
-    return { 
-      user: JSON.parse(localStorage.getItem('loggedInUser') || '{}') 
+    return {
+      user: JSON.parse(localStorage.getItem("loggedInUser") || "{}"),
     };
   },
   methods: {
     logout() {
-      localStorage.removeItem('loggedInUser');
+      localStorage.removeItem("loggedInUser");
       this.user = {};
-      this.$router.push('/');
+      this.$router.push("/");
     },
   },
   mounted() {
@@ -1486,4 +1587,4 @@ const app = Vue.createApp({
 
 // Use Router
 app.use(router);
-app.mount('#app');
+app.mount("#app");
