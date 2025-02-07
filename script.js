@@ -1,59 +1,25 @@
-// Initialize Data from JSON File
-const initDataFromJSON = async () => {
-  const users = JSON.parse(localStorage.getItem("users") || "[]");
-  const employees = JSON.parse(localStorage.getItem("employees") || "[]");
-  users.push({ role: "admin", password: "123admin!123", username: "HRAdmin" });
-  // Add admin credentials
-  if (!users.some((u) => u.role === "admin")) {
-    localStorage.setItem("users", JSON.stringify(users));
-  }
-
-  // Skip loading from JSON if employees already exist
-  if (employees.length > 0) return;
-
+// Initialize Data from Backend API
+const initDataFromAPI = async () => {
   try {
-    const response = await fetch(
-      "https://sivuyilemtwetwe.github.io/modernstaff-techhr-hub/"
-    );
-    if (!response.ok)
-      throw new Error(`Failed to fetch employee data: ${response.status}`);
+    const response = await fetch("http://localhost:5000/api/employees");
+    if (!response.ok) throw new Error("Failed to fetch employee data");
+    const employees = await response.json();
 
-    const data = await response.json();
-    const loadedEmployees = data.employeeData.map((employee) => {
-      const username =
-        employee.name.toLowerCase().replace(/\s+/g, ".") +
-        "." +
-        employee.employeeId;
-      const password = "emp" + Math.floor(1000 + Math.random() * 9000);
-      users.push({
-        username,
-        password,
-        role: "employee",
-        employeeId: employee.employeeId,
-      });
-
-      return {
-        ...employee,
-        username,
-        password,
-        attendance: employee.attendance || [], // Initialize attendance if missing
-        leaveRequests: employee.leaveRequests || [], // Initialize leave requests if missing
-      };
-    });
-
-    localStorage.setItem("employees", JSON.stringify(loadedEmployees));
-    localStorage.setItem("users", JSON.stringify(users));
-    console.log("Employee data initialized from JSON.");
+    // Store employees in localStorage for now (optional, can be removed)
+    localStorage.setItem("employees", JSON.stringify(employees));
+    console.log("Employee data initialized from API.");
   } catch (error) {
     console.error("Error initializing employee data:", error);
   }
 };
+
+// Loader Overlay Component
 const LoaderOverlay = {
   template: `
-        <div class="loader-overlay">
-            <span class="loader"></span>
-        </div>
-    `,
+    <div class="loader-overlay">
+      <span class="loader"></span>
+    </div>
+  `,
 };
 
 // Login Component
@@ -72,182 +38,76 @@ const Login = {
   methods: {
     async login() {
       this.isLoading = true;
+      try {
+        const response = await fetch("http://localhost:5000/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contact: this.username,
+            password: this.password,
+          }),
+        });
 
-      // Simulate network delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+        if (!response.ok) throw new Error("Invalid credentials");
 
-      const users = JSON.parse(localStorage.getItem("users") || "[]");
-      const user = users.find(
-        (u) => u.username === this.username && u.password === this.password
-      );
+        const { token, user } = await response.json();
 
-      if (user) {
-        localStorage.setItem("loggedInUser", JSON.stringify(user));
-        this.$router.push(
-          user.role === "admin" ? "/admin-dashboard" : "/employee-dashboard"
-        );
-      } else {
+        // Store token and user data
+        localStorage.setItem("token", token);
+        localStorage.setItem("user", JSON.stringify(user));
+
+        // Redirect based on role
+        this.$router.push(user.role === "Admin" ? "/admin-dashboard" : "/employee-dashboard");
+      } catch (error) {
         this.errorMessage = "Invalid credentials";
+      } finally {
+        this.isLoading = false;
       }
-
-      this.isLoading = false;
     },
   },
   template: `
-  <div class="container">
-  <LoaderOverlay v-if="isLoading" />
-      <!-- Left Logo Section -->
+    <div class="container">
+      <LoaderOverlay v-if="isLoading" />
       <div class="logo-section">
-      <img src="asserts/final logo .png">
-          <h1>Modern Tech Solutions</h1>
-          <p>Clientele centered</p>
+        <img src="asserts/final logo .png">
+        <h1>Modern Tech Solutions</h1>
+        <p>Clientele centered</p>
       </div>
-
-      <!-- Right Form Section -->
       <div class="form-section">
-          <form @submit.prevent="login">
-              <label for="email">Your Username</label>
-              <input 
-                  type="text" 
-                  id="email" 
-                  v-model="username" 
-                  placeholder="Enter your username" 
-                  required
-              >
-
-              <label for="password">Password</label>
-              <input 
-                  type="password" 
-                  id="password" 
-                  v-model="password" 
-                  placeholder="Enter your password" 
-                  required
-              >
-
-              <div class="options">
-                  <label>
-                      <input type="checkbox"> Remember Me
-                  </label>
-                  <a href="#">Recover Password</a>
-              </div>
-
-              <button type="submit"><i class="fa-solid fa-right-to-bracket"></i> Sign In</button>
-              
-              <p v-if="errorMessage" class="text-danger mt-2">{{ errorMessage }}</p>
-          </form>
+        <form @submit.prevent="login">
+          <label for="email">Your Username</label>
+          <input
+            type="text"
+            id="email"
+            v-model="username"
+            placeholder="Enter your username"
+            required
+          >
+          <label for="password">Password</label>
+          <input
+            type="password"
+            id="password"
+            v-model="password"
+            placeholder="Enter your password"
+            required
+          >
+          <div class="options">
+            <label>
+              <input type="checkbox"> Remember Me
+            </label>
+            <a href="#">Recover Password</a>
+          </div>
+          <button type="submit">
+            <i class="fa-solid fa-right-to-bracket"></i> Sign In
+          </button>
+          <p v-if="errorMessage" class="text-danger mt-2">{{ errorMessage }}</p>
+        </form>
       </div>
-  </div>
-  `,
-  styles: `
-  <style>
-      body {
-          margin: 0;
-          height: 100vh;
-          background: #ffffff;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-      }
-
-      .container {
-          display: flex;
-          width: 200%;
-          height: 600px;
-          box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
-          overflow: hidden;
-          border-radius: 10px;
-      }
-
-      /* Left Section: Logo */
-      .logo-section {
-          width: 120%;
-          background-color: #ffffff;
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-          align-items: center;
-          text-align: center;
-      }
-
-      .logo-section h1 {
-          font-size: 32px;
-          color: #003366;
-          font-weight: bold;
-          margin-bottom: 10px;
-      }
-
-      .logo-section p {
-          font-size: 14px;
-          color: #555555;
-      }
-
-      /* Right Section: Diagonal Form Section */
-      .form-section {
-          position: relative;
-          width: 174%;
-          background-color: #003366;
-          clip-path: polygon(20% 0%, 100% 0%, 100% 100%, 0% 100%);
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          padding: 40px;
-      }
-
-      form {
-          width: 70%;
-          background-color: rgba(255, 255, 255, 0.95);
-          padding: 60px;
-          border-radius: 3px;
-          box-shadow: 0 5px 10px rgba(0, 0, 0.2, 0.2);
-      }
-
-      form label {
-          font-size: 14px;
-          font-weight: bold;
-          color: #003366;
-          margin-bottom: 5px;
-          display: block;
-      }
-
-      form input:not([type="checkbox"]) {
-          width: 100%;
-          padding: 12px;
-          margin-bottom: 30px;
-          border: 1px solid #ccc;
-          border-radius: 5px;
-      }
-
-      .options {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          font-size: 12px;
-          color: #555555;
-      }
-
-      .options a {
-          color: #1e90ff;
-          text-decoration: none;
-      }
-
-      button {
-          width: 100%;
-          padding: 12px;
-          background-color: #1e90ff;
-          border: none;
-          border-radius: 5px;
-          color: white;
-          font-size: 16px;
-          cursor: pointer;
-      }
-
-      button:hover {
-          background-color: #0056b3;
-      }
-  </style>
+    </div>
   `,
 };
 
+// Navigation Header Component
 const NavigationHeader = {
   data() {
     return {
@@ -263,28 +123,25 @@ const NavigationHeader = {
     },
     async logout() {
       this.isLoading = true;
-
-      // Simulate network delay
       await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      localStorage.removeItem("loggedInUser");
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
       this.$router.push("/");
-
       this.isLoading = false;
     },
   },
   template: `
-  <div >
-  <LoaderOverlay v-if="isLoading" />
+    <div>
+      <LoaderOverlay v-if="isLoading" />
       <div class="d-flex justify-content-between align-items-center p-3 bg-light mb-4">
-          <button @click="goBack" class="btn btn-secondary">
-              <i class="fa-solid fa-arrow-left"></i> Back
-          </button>
-          <button @click="logout" class="btn btn-danger">
-              <i class="fa-solid fa-right-from-bracket"></i> Logout
-          </button>
+        <button @click="goBack" class="btn btn-secondary">
+          <i class="fa-solid fa-arrow-left"></i> Back
+        </button>
+        <button @click="logout" class="btn btn-danger">
+          <i class="fa-solid fa-right-from-bracket"></i> Logout
+        </button>
       </div>
-      </div>
+    </div>
   `,
 };
 const PayrollManagement = {
@@ -1079,298 +936,105 @@ const AdminDashboard = {
 };
 
 // Employee Management Component (Admin)
+// Employee Management Component
 const EmployeeManagement = {
   components: {
     NavigationHeader,
   },
   data() {
     return {
-      employees: JSON.parse(localStorage.getItem("employees") || "[]"),
+      employees: [],
       newEmployee: {
         name: "",
         position: "",
         department: "",
         salary: "",
-        employeeId: "",
-        username: "",
-        password: "",
-        attendance: [],
-        leaveRequests: [],
       },
-      editableFields: ["name", "position", "department", "salary"],
     };
   },
+  async created() {
+    await this.fetchEmployees();
+  },
   methods: {
-    async editCell(employee, field) {
-      const currentValue = employee[field];
-
-      let inputType = "text";
-      if (field === "salary") {
-        inputType = "number";
-      }
-
-      const capitalisedField = field.charAt(0).toUpperCase() + field.slice(1);
-
-      const { value: newValue } = await Swal.fire({
-        title: `Edit ${capitalisedField}`,
-        input: inputType,
-        inputLabel: `Enter new ${field}`,
-        inputValue: currentValue,
-        showCancelButton: true,
-        inputValidator: (value) => {
-          if (!value) {
-            return `${capitalisedField} cannot be empty!`;
-          }
-          if (field === "salary" && value < 0) {
-            return "Salary cannot be negative!";
-          }
-        },
-      });
-
-      if (newValue) {
-        // Update the employee data
-        employee[field] = field === "salary" ? parseFloat(newValue) : newValue;
-
-        // If name is changed, update username
-        if (field === "name") {
-          const newUsername =
-            newValue.toLowerCase().replace(/\s+/g, ".") +
-            "." +
-            employee.employeeId;
-          employee.username = newUsername;
-
-          // Update username in users array
-          const users = JSON.parse(localStorage.getItem("users") || "[]");
-          const userIndex = users.findIndex(
-            (u) => u.employeeId === employee.employeeId
-          );
-          if (userIndex !== -1) {
-            users[userIndex].username = newUsername;
-            localStorage.setItem("users", JSON.stringify(users));
-          }
-        }
-
-        // Save changes
-        this.saveEmployees();
-
-        // Show success message
-        await Swal.fire({
-          icon: "success",
-          title: "Updated!",
-          text: `${capitalisedField} has been updated successfully.`,
-          timer: 1500,
+    async fetchEmployees() {
+      try {
+        const response = await fetch("http://localhost:5000/api/employees", {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
         });
+        if (!response.ok) throw new Error("Failed to fetch employees");
+        this.employees = await response.json();
+      } catch (error) {
+        console.error("Error fetching employees:", error);
       }
     },
-    regenerateCredentials(employee) {
-      const users = JSON.parse(localStorage.getItem("users") || "[]");
-      const password = "emp" + Math.floor(1000 + Math.random() * 9000);
-
-      // Update credentials in the users array
-      const user = users.find((u) => u.employeeId === employee.employeeId);
-      if (user) {
-        user.password = password;
-      } else {
-        users.push({
-          username: employee.username,
-          password,
-          role: "employee",
-          employeeId: employee.employeeId,
+    async addEmployee() {
+      try {
+        const response = await fetch("http://localhost:5000/api/employees", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify(this.newEmployee),
         });
-      }
-
-      // Update employee data
-      employee.password = password;
-
-      // Save updated data to localStorage
-      this.saveEmployees(users);
-
-      Swal.fire({
-        icon: "success",
-        title: "Credentials Updated",
-        text: `New Password: ${password}`,
-        footer: "Please ensure the employee changes this password",
-      });
-    },
-    addEmployee() {
-      if (
-        !this.newEmployee.name ||
-        !this.newEmployee.position ||
-        !this.newEmployee.department
-      ) {
-        Swal.fire({
-          icon: "error",
-          title: "Incomplete Information",
-          text: "Please fill in all required fields",
-        });
-        return;
-      }
-
-      const employeeId = Date.now().toString();
-      const username =
-        this.newEmployee.name.toLowerCase().replace(/\s+/g, ".") +
-        "." +
-        employeeId;
-      const password = "emp" + Math.floor(1000 + Math.random() * 9000);
-
-      const employeeToAdd = {
-        ...this.newEmployee,
-        employeeId,
-        username,
-        password,
-        attendance: [],
-        leaveRequests: [],
-      };
-
-      this.employees.push(employeeToAdd);
-
-      const users = JSON.parse(localStorage.getItem("users") || "[]");
-      users.push({
-        username,
-        password,
-        role: "employee",
-        employeeId,
-      });
-
-      this.saveEmployees(users);
-
-      this.newEmployee = {
-        name: "",
-        position: "",
-        department: "",
-        salary: "",
-        employeeId: "",
-        username: "",
-        password: "",
-      };
-
-      Swal.fire({
-        icon: "success",
-        title: "Employee Added Successfully!",
-        html: `
-                  <p>Username: ${username}</p>
-                  <p>Password: ${password}</p>
-              `,
-        footer: "Please share credentials securely with the employee",
-      });
-    },
-    deleteEmployee(employeeId) {
-      Swal.fire({
-        title: "Are you sure?",
-        text: "You won't be able to revert this!",
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonColor: "#3085d6",
-        cancelButtonColor: "#d33",
-        confirmButtonText: "Yes, delete it!",
-      }).then((result) => {
-        if (result.isConfirmed) {
-          this.employees = this.employees.filter(
-            (emp) => emp.employeeId !== employeeId
-          );
-
-          const users = JSON.parse(localStorage.getItem("users") || "[]");
-          const updatedUsers = users.filter(
-            (user) => user.employeeId !== employeeId
-          );
-
-          this.saveEmployees(updatedUsers);
-
-          Swal.fire({
-            title: "Deleted!",
-            text: "Employee has been deleted.",
-            icon: "success",
-          });
-        }
-      });
-    },
-    saveEmployees(users) {
-      localStorage.setItem("employees", JSON.stringify(this.employees));
-      if (users) {
-        localStorage.setItem("users", JSON.stringify(users));
+        if (!response.ok) throw new Error("Failed to add employee");
+        await this.fetchEmployees(); // Refresh the list
+        this.newEmployee = { name: "", position: "", department: "", salary: "" };
+      } catch (error) {
+        console.error("Error adding employee:", error);
       }
     },
   },
   template: `
-      <div>
-          <NavigationHeader />
-          <h2>Employee Management</h2>
-          
-          <!-- Add Employee Form -->
-          <div class="card mb-4">
-              <div class="card-header">Add New Employee</div>
-              <div class="card-body">
-                  <div class="row">
-                      <div class="col-md-3">
-                          <input v-model="newEmployee.name" type="text" class="form-control" placeholder="Name" required>
-                      </div>
-                      <div class="col-md-3">
-                          <input v-model="newEmployee.position" type="text" class="form-control" placeholder="Position" required>
-                      </div>
-                      <div class="col-md-3">
-                          <input v-model="newEmployee.department" type="text" class="form-control" placeholder="Department" required>
-                      </div>
-                      <div class="col-md-3">
-                          <input v-model="newEmployee.salary" type="number" min="0" class="form-control" placeholder="Salary">
-                      </div>
-                  </div>
-                  <button @click="addEmployee" class="btn btn-primary mt-3"><i class="fa-solid fa-user-plus"></i> Add Employee</button>
-              </div>
+    <div>
+      <NavigationHeader />
+      <h2>Employee Management</h2>
+      <div class="card mb-4">
+        <div class="card-header">Add New Employee</div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-3">
+              <input v-model="newEmployee.name" type="text" class="form-control" placeholder="Name" required>
+            </div>
+            <div class="col-md-3">
+              <input v-model="newEmployee.position" type="text" class="form-control" placeholder="Position" required>
+            </div>
+            <div class="col-md-3">
+              <input v-model="newEmployee.department" type="text" class="form-control" placeholder="Department" required>
+            </div>
+            <div class="col-md-3">
+              <input v-model="newEmployee.salary" type="number" min="0" class="form-control" placeholder="Salary">
+            </div>
           </div>
-
-          <!-- Employees Table -->
-          <table class="table table-striped">
-              <thead>
-                  <tr>
-                      <th><i class="fa-solid fa-list-ol"></i> Name</th>
-                      <th><i class="fa-solid fa-briefcase"></i> Position</th>
-                      <th><i class="fa-solid fa-code-branch"></i>  Department</th>
-                      <th><i class="fa-solid fa-sack-dollar"></i> Salary</th>
-                      <th><i class="fa-solid fa-user"></i> Username</th>
-                      <th><i class="fa-regular fa-comment-dots"></i> Actions</th>
-                  </tr>
-              </thead>
-              <tbody>
-                  <tr v-for="employee in employees" :key="employee.employeeId">
-                      <td @click="editCell(employee, 'name')" style="cursor: pointer;" class="editable-cell">
-                          {{ employee.name }}
-                      </td>
-                      <td @click="editCell(employee, 'position')" style="cursor: pointer;" class="editable-cell">
-                          {{ employee.position }}
-                      </td>
-                      <td @click="editCell(employee, 'department')" style="cursor: pointer;" class="editable-cell">
-                          {{ employee.department }}
-                      </td>
-                      <td @click="editCell(employee, 'salary')" style="cursor: pointer;" class="editable-cell">
-                          {{ employee.salary }}
-                      </td>
-                      <td>{{ employee.username }}</td>
-                      <td>
-                          <button @click="regenerateCredentials(employee)" class="btn btn-sm btn-warning me-2"><i class="fa-solid fa-rotate-right"></i> Reset Password</button>
-                          <button @click="deleteEmployee(employee.employeeId)" class="btn btn-sm btn-danger"><i class="fa-solid fa-user-xmark"></i> Delete</button>
-                      </td>
-                  </tr>
-              </tbody>
-          </table>
+          <button @click="addEmployee" class="btn btn-primary mt-3">
+            <i class="fa-solid fa-user-plus"></i> Add Employee
+          </button>
+        </div>
       </div>
-  `,
-  styles: `
-      <style>
-      .editable-cell:hover {
-          background-color: #f5f5f5;
-          position: relative;
-      }
-      .editable-cell:hover::after {
-          content: "✎";
-          position: absolute;
-          right: 5px;
-          top: 50%;
-          transform: translateY(-50%);
-          opacity: 0.5;
-      }
-      </style>
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th><i class="fa-solid fa-list-ol"></i> Name</th>
+            <th><i class="fa-solid fa-briefcase"></i> Position</th>
+            <th><i class="fa-solid fa-code-branch"></i> Department</th>
+            <th><i class="fa-solid fa-sack-dollar"></i> Salary</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="employee in employees" :key="employee.employeeId">
+            <td>{{ employee.name }}</td>
+            <td>{{ employee.position }}</td>
+            <td>{{ employee.department }}</td>
+            <td>{{ employee.salary }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   `,
 };
+
 
 const LeaveStatusChart = {
     components: {
@@ -1547,13 +1211,14 @@ const routes = [
   },
 ];
 
+
 const router = VueRouter.createRouter({
   history: VueRouter.createWebHashHistory(),
   routes,
 });
 
 router.beforeEach((to, from, next) => {
-  const user = JSON.parse(localStorage.getItem("loggedInUser") || "{}");
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
   if (to.meta.role && to.meta.role !== user.role) {
     next("/");
   } else {
@@ -1565,18 +1230,19 @@ router.beforeEach((to, from, next) => {
 const app = Vue.createApp({
   data() {
     return {
-      user: JSON.parse(localStorage.getItem("loggedInUser") || "{}"),
+      user: JSON.parse(localStorage.getItem("user") || "{}"),
     };
   },
   methods: {
     logout() {
-      localStorage.removeItem("loggedInUser");
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
       this.user = {};
       this.$router.push("/");
     },
   },
   mounted() {
-    initDataFromJSON();
+    initDataFromAPI();
   },
   template: `
     <div>
@@ -1585,6 +1251,6 @@ const app = Vue.createApp({
   `,
 });
 
-// Use Router
 app.use(router);
 app.mount("#app");
+
