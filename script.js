@@ -1,17 +1,59 @@
 // Initialize Data from Backend API
 const initDataFromAPI = async () => {
   try {
-    const response = await fetch("http://localhost:5000/api/employees");
-    if (!response.ok) throw new Error("Failed to fetch employee data");
-    const employees = await response.json();
-
-    // Store employees in localStorage for now (optional, can be removed)
-    localStorage.setItem("employees", JSON.stringify(employees));
-    console.log("Employee data initialized from API.");
+      const response = await fetch("http://localhost:5000/api/employees", {
+          headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`
+          }
+      });
+      if (!response.ok) throw new Error("Failed to fetch data");
+      const employees = await response.json();
+      localStorage.setItem("employees", JSON.stringify(employees));
   } catch (error) {
-    console.error("Error initializing employee data:", error);
+      console.error("Error initializing data:", error);
   }
 };
+
+// Add these functions to script.js
+function getTokenExpiry(token) {
+  const payload = JSON.parse(atob(token.split('.')[1]));
+  return payload.exp * 1000; // Convert to milliseconds
+}
+
+async function refreshToken() {
+  try {
+      const response = await fetch("http://localhost:5000/api/auth/refresh", {
+          method: "POST",
+          headers: {
+              "Authorization": `Bearer ${localStorage.getItem("token")}`
+          }
+      });
+      if (!response.ok) throw new Error("Token refresh failed");
+      const { token: newToken } = await response.json();
+      localStorage.setItem("token", newToken);
+      startTokenRefreshTimer(newToken);
+  } catch (error) {
+      console.error("Token refresh error:", error);
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      window.location.href = "/";
+  }
+}
+
+function startTokenRefreshTimer(token) {
+  const expiryTime = getTokenExpiry(token);
+  const refreshTimeout = expiryTime - Date.now() - 300000; // 5 mins before expiry
+  if (refreshTimeout > 0) {
+      setTimeout(refreshToken, refreshTimeout);
+  } else {
+      refreshToken();
+  }
+}
+
+// Call this after login and in app initialization
+if (localStorage.getItem("token")) {
+  startTokenRefreshTimer(localStorage.getItem("token"));
+}
 
 // Loader Overlay Component
 const LoaderOverlay = {
@@ -145,43 +187,30 @@ const NavigationHeader = {
   `,
 };
 const PayrollManagement = {
-  components: {
-    NavigationHeader,
-  },
+  components: { NavigationHeader },
   data() {
-    return {
-      employees: JSON.parse(localStorage.getItem("employees") || "[]"),
-    };
+      return { employees: [] };
+  },
+  async created() {
+      await this.fetchEmployees();
   },
   methods: {
-    calculateGrossSalary(employee) {
-      return (employee.hoursWorked || 0) * (employee.hourlyRate || 0);
-    },
+      async fetchEmployees() {
+          try {
+              const response = await fetch("http://localhost:5000/api/employees", {
+                  headers: {
+                      Authorization: `Bearer ${localStorage.getItem("token")}`
+                  }
+              });
+              if (!response.ok) throw new Error("Failed to fetch employees");
+              this.employees = await response.json();
+          } catch (error) {
+              console.error("Error:", error);
+          }
+      },
+      // ... rest of the methods
   },
-  template: `
-      <div>
-       <NavigationHeader />
-        <h2>Payroll Management</h2>
-        <table class="table table-striped">
-          <thead>
-            <tr>
-              <th>Employee Name</th>
-              <th>Hours Worked</th>
-              <th>Hourly Rate</th>
-              <th>Gross Salary</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="employee in employees" :key="employee.employeeId">
-              <td>{{ employee.name }}</td>
-              <td><input type="number" min="0" v-model="employee.hoursWorked" class="form-control" /></td>
-              <td><input type="number" min="0" v-model="employee.hourlyRate" class="form-control" /></td>
-              <td><i class="fa-solid fa-equals"></i> {{ calculateGrossSalary(employee) }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    `,
+  // ... template remains the same
 };
 
 const TimeOffRequests = {
@@ -1242,8 +1271,13 @@ const app = Vue.createApp({
     },
   },
   mounted() {
+    const token = localStorage.getItem("token");
+    if (token && getTokenExpiry(token) < Date.now()) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+    }
     initDataFromAPI();
-  },
+},
   template: `
     <div>
       <router-view></router-view>
