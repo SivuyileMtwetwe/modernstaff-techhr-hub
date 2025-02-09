@@ -1,19 +1,49 @@
 // Initialize Data from Backend API
 const initDataFromAPI = async () => {
+  const token = localStorage.getItem("token");
+  if (!token || isTokenExpired(token)) {
+      console.error("Token is missing or expired");
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      window.location.href = "/"; // Redirect to login
+      return;
+  }
+
   try {
       const response = await fetch("http://localhost:5000/api/employees", {
           headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`
+              Authorization: `Bearer ${token}`
           }
       });
-      if (!response.ok) throw new Error("Failed to fetch data");
+      if (!response.ok) {
+          if (response.status === 403) {
+              console.error("Access denied: User is not an admin");
+              alert("You do not have permission to access this page.");
+              window.location.href = "/employee-dashboard"; // Redirect to employee dashboard
+              return;
+          }
+          throw new Error("Failed to fetch data");
+      }
       const employees = await response.json();
       localStorage.setItem("employees", JSON.stringify(employees));
+      console.log("Employee data initialized from API:", employees);
   } catch (error) {
       console.error("Error initializing data:", error);
   }
 };
 
+function isTokenExpired(token) {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.exp * 1000 < Date.now(); // Convert to milliseconds
+}
+
+const token = localStorage.getItem("token");
+if (!token || isTokenExpired(token)) {
+    console.error("Token is missing or expired");
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    window.location.href = "/"; // Redirect to login
+}
 // Add these functions to script.js
 function getTokenExpiry(token) {
   const payload = JSON.parse(atob(token.split('.')[1]));
@@ -67,45 +97,50 @@ const LoaderOverlay = {
 // Login Component
 const Login = {
   data() {
-    return {
-      username: "",
-      password: "",
-      errorMessage: "",
-      isLoading: false,
-    };
-  },
-  components: {
-    LoaderOverlay,
+      return {
+          username: "",
+          password: "",
+          errorMessage: "",
+          isLoading: false,
+      };
   },
   methods: {
-    async login() {
-      this.isLoading = true;
-      try {
-        const response = await fetch("http://localhost:5000/api/auth/login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contact: this.username,
-            password: this.password,
-          }),
-        });
+      async login() {
+          this.isLoading = true;
+          try {
+              const response = await fetch("http://localhost:5000/api/auth/login", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                      contact: this.username,
+                      password: this.password,
+                  }),
+              });
 
-        if (!response.ok) throw new Error("Invalid credentials");
+              console.log("Login response:", response); // Log the response
 
-        const { token, user } = await response.json();
+              if (!response.ok) {
+                  const errorData = await response.json();
+                  console.error("Login failed:", errorData);
+                  throw new Error(errorData.message || "Invalid credentials");
+              }
 
-        // Store token and user data
-        localStorage.setItem("token", token);
-        localStorage.setItem("user", JSON.stringify(user));
+              const { token, user } = await response.json();
+              console.log("Login successful. Token:", token, "User:", user); // Log the token and user
 
-        // Redirect based on role
-        this.$router.push(user.role === "Admin" ? "/admin-dashboard" : "/employee-dashboard");
-      } catch (error) {
-        this.errorMessage = "Invalid credentials";
-      } finally {
-        this.isLoading = false;
-      }
-    },
+              // Store token and user data
+              localStorage.setItem("token", token);
+              localStorage.setItem("user", JSON.stringify(user));
+
+              // Redirect based on role
+              this.$router.push(user.role === "Admin" ? "/admin-dashboard" : "/employee-dashboard");
+          } catch (error) {
+              this.errorMessage = error.message || "Login failed. Please try again.";
+              console.error("Login error:", error);
+          } finally {
+              this.isLoading = false;
+          }
+      },
   },
   template: `
     <div class="container">
