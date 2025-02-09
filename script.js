@@ -10,7 +10,7 @@ const initDataFromAPI = async () => {
   }
 
   try {
-      const response = await fetch("http://localhost:5000/api/employees", {
+      const response = await fetch("https://modernstaff-techhr-hub-backend-api.vercel.app/api/employees", {
           headers: {
               Authorization: `Bearer ${token}`
           }
@@ -52,7 +52,7 @@ function getTokenExpiry(token) {
 
 async function refreshToken() {
   try {
-      const response = await fetch("http://localhost:5000/api/auth/refresh", {
+      const response = await fetch("https://modernstaff-techhr-hub-backend-api.vercel.app/api/auth/refresh", {
           method: "POST",
           headers: {
               "Authorization": `Bearer ${localStorage.getItem("token")}`
@@ -108,7 +108,7 @@ const Login = {
       async login() {
           this.isLoading = true;
           try {
-              const response = await fetch("http://localhost:5000/api/auth/login", {
+              const response = await fetch("https://modernstaff-techhr-hub-backend-api.vercel.app/api/auth/login", {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({
@@ -232,7 +232,7 @@ const PayrollManagement = {
   methods: {
       async fetchEmployees() {
           try {
-              const response = await fetch("http://localhost:5000/api/employees", {
+              const response = await fetch("https://modernstaff-techhr-hub-backend-api.vercel.app/api/employees", {
                   headers: {
                       Authorization: `Bearer ${localStorage.getItem("token")}`
                   }
@@ -1022,7 +1022,7 @@ const EmployeeManagement = {
   methods: {
     async fetchEmployees() {
       try {
-        const response = await fetch("http://localhost:5000/api/employees", {
+        const response = await fetch("https://modernstaff-techhr-hub-backend-api.vercel.app/api/employees", {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
@@ -1035,7 +1035,7 @@ const EmployeeManagement = {
     },
     async addEmployee() {
       try {
-        const response = await fetch("http://localhost:5000/api/employees", {
+        const response = await fetch("https://modernstaff-techhr-hub-backend-api.vercel.app/api/employees", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
