@@ -1,34 +1,25 @@
 // Initialize Data from Backend API
 const initDataFromAPI = async () => {
-  const token = localStorage.getItem("token");
-  if (!token || isTokenExpired(token)) {
-      console.error("Token is missing or expired");
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      window.location.href = "/"; // Redirect to login
-      return;
-  }
-
   try {
-      const response = await fetch("https://modernstaff-techhr-hub-backend-api.vercel.app/api/employees", {
-          headers: {
-              Authorization: `Bearer ${token}`
-          }
-      });
-      if (!response.ok) {
-          if (response.status === 403) {
-              console.error("Access denied: User is not an admin");
-              alert("You do not have permission to access this page.");
-              window.location.href = "/employee-dashboard"; // Redirect to employee dashboard
-              return;
-          }
-          throw new Error("Failed to fetch data");
+    const token = localStorage.getItem("token");
+    if (!token || isTokenExpired(token)) return;
+
+    const response = await fetch("http://localhost:5000/api/employees", {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    if (!response.ok) {
+      if (response.status === 403) {
+        console.error("Access denied: User is not an admin");
+        this.$router.push("/employee-dashboard");
       }
-      const employees = await response.json();
-      localStorage.setItem("employees", JSON.stringify(employees));
-      console.log("Employee data initialized from API:", employees);
+      return;
+    }
+
+    const employees = await response.json();
+    localStorage.setItem("employees", JSON.stringify(employees));
   } catch (error) {
-      console.error("Error initializing data:", error);
+    console.error("Error initializing data:", error);
   }
 };
 
@@ -52,7 +43,7 @@ function getTokenExpiry(token) {
 
 async function refreshToken() {
   try {
-      const response = await fetch("https://modernstaff-techhr-hub-backend-api.vercel.app/api/auth/refresh", {
+      const response = await fetch("http://localhost:5000/api/auth/refresh", {
           method: "POST",
           headers: {
               "Authorization": `Bearer ${localStorage.getItem("token")}`
@@ -108,7 +99,7 @@ const Login = {
       async login() {
           this.isLoading = true;
           try {
-              const response = await fetch("https://modernstaff-techhr-hub-backend-api.vercel.app/api/auth/login", {
+              const response = await fetch("http://localhost:5000/api/auth/login", {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({
@@ -232,7 +223,7 @@ const PayrollManagement = {
   methods: {
       async fetchEmployees() {
           try {
-              const response = await fetch("https://modernstaff-techhr-hub-backend-api.vercel.app/api/employees", {
+              const response = await fetch("http://localhost:5000/api/employees", {
                   headers: {
                       Authorization: `Bearer ${localStorage.getItem("token")}`
                   }
@@ -1022,7 +1013,7 @@ const EmployeeManagement = {
   methods: {
     async fetchEmployees() {
       try {
-        const response = await fetch("https://modernstaff-techhr-hub-backend-api.vercel.app/api/employees", {
+        const response = await fetch("http://localhost:5000/api/employees", {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
@@ -1035,7 +1026,7 @@ const EmployeeManagement = {
     },
     async addEmployee() {
       try {
-        const response = await fetch("https://modernstaff-techhr-hub-backend-api.vercel.app/api/employees", {
+        const response = await fetch("http://localhost:5000/api/employees", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -1283,11 +1274,21 @@ const router = VueRouter.createRouter({
 
 router.beforeEach((to, from, next) => {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const token = localStorage.getItem("token");
+  
+  // 1. Redirect to login if accessing protected route without token
+  if (to.meta.role && !token) {
+    next("/");
+    return;
+  }
+
+  // 2. Check role mismatch
   if (to.meta.role && to.meta.role !== user.role) {
     next("/");
-  } else {
-    next();
+    return;
   }
+
+  next();
 });
 
 // Vue App
