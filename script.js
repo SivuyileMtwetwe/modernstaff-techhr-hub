@@ -76,14 +76,6 @@ if (localStorage.getItem("token")) {
   startTokenRefreshTimer(localStorage.getItem("token"));
 }
 
-// Loader Overlay Component
-const LoaderOverlay = {
-  template: `
-    <div class="loader-overlay">
-      <span class="loader"></span>
-    </div>
-  `,
-};
 
 // Login Component
 const Login = {
@@ -135,7 +127,7 @@ const Login = {
   },
   template: `
     <div class="container">
-      <LoaderOverlay v-if="isLoading" />
+    
       <div class="logo-section">
         <img src="asserts/final logo .png">
         <h1>Modern Tech Solutions</h1>
@@ -183,7 +175,7 @@ const NavigationHeader = {
     };
   },
   components: {
-    LoaderOverlay,
+ 
   },
   methods: {
     goBack() {
@@ -200,7 +192,7 @@ const NavigationHeader = {
   },
   template: `
     <div>
-      <LoaderOverlay v-if="isLoading" />
+
       <div class="d-flex justify-content-between align-items-center p-3 bg-light mb-4">
         <button @click="goBack" class="btn btn-secondary">
           <i class="fa-solid fa-arrow-left"></i> Back
