@@ -59,13 +59,13 @@ This HR management system implements the following key features:
 * **User Authentication:** Secure login and role-based access control.
 * **Alerts and Notifications:** Interactive alerts using SweetAlert2.
 
-## Potential Improvements (Optional)
+## Potential Improvements 
 * Integration with third-party payroll systems.
 * Advanced reporting and analytics.
 * Multi-language support.
 * Mobile app integration.
 
-## Credits (If Applicable)
+## Credits 
 * Bootstrap: [https://getbootstrap.com/](https://getbootstrap.com/)
 * Vue.js: [https://vuejs.org/](https://vuejs.org/)
 * Chart.js: [https://www.chartjs.org/](https://www.chartjs.org/)
