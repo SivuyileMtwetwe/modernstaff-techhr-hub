@@ -76,6 +76,11 @@ This HR management system implements the following key features:
 [Specify the license, e.g., MIT License](link/to/license)
 
 ## Author
-[Your Student Name(s)]  
-[Your Student Email(s)]  
-[Your Student GitHub Profile(s)]
+Sivuyile Mtwetwe  
+[GitHub: sivuyilemtwetwe](https://github.com/sivuyilemtwetwe)  
+
+Anathi Mnotoza  
+[GitHub: anathi-hub](https://github.com/anathi-hub)  
+
+William October  
+[GitHub: spicey-jpg](https://github.com/spicey-jpg)
