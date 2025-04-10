@@ -10,7 +10,7 @@ A comprehensive HR management system built by [Your Student Name(s)] for efficie
 - [Technologies Used](#technologies-used)
 - [Setup Instructions](#setup-instructions)
 - [Key Features](#key-features)
-- [Potential Improvements](#potential-improvements) (Optional)
+- [Potential Improvements](#potential-improvements)
 - [Credits](#credits)
 - [Author](#author)
 
