@@ -11,8 +11,7 @@ A comprehensive HR management system built by [Your Student Name(s)] for efficie
 - [Setup Instructions](#setup-instructions)
 - [Key Features](#key-features)
 - [Potential Improvements](#potential-improvements) (Optional)
-- [Credits](#credits) (If Applicable)
-- [License](#license) (If Applicable)
+- [Credits](#credits)
 - [Author](#author)
 
 ## Live Demo
@@ -34,8 +33,8 @@ Follow these steps to run the ModernTech HR Management System on your local deve
 
 2.  **Clone the Repository:**
     ```bash
-    git clone [repository URL]
-    cd [repository name]
+    git clone https://github.com/SivuyileMtwetwe/modernstaff-techhr-hub
+    cd modernstaff-techhr-hub
     ```
 
 3.  **Install Dependencies:**
@@ -72,8 +71,6 @@ This HR management system implements the following key features:
 * Chart.js: [https://www.chartjs.org/](https://www.chartjs.org/)
 * SweetAlert2: [https://sweetalert2.github.io/](https://sweetalert2.github.io/)
 
-## License (If Applicable)
-[Specify the license, e.g., MIT License](link/to/license)
 
 ## Author
 Sivuyile Mtwetwe  
