@@ -1,7 +1,7 @@
 # ModernTech HR Management System
 
-[![Screenshot of Homepage](assets/Screenshot_2025-04-10_120732.png)](https://modernstaff-techhr-hub-99b636e5866484-sivuyilemtwetwes-projects.vercel.app/#/)
-[![Animated GIF of Features](assets/Screen_Recording_2025-04-10_120958.gif)](https://modernstaff-techhr-hub-99b636e5866484-sivuyilemtwetwes-projects.vercel.app/#/)
+[![Screenshot of Homepage](./assets/Screenshot_2025-04-10_120732.png)](https://modernstaff-techhr-hub-99b636e5866484-sivuyilemtwetwes-projects.vercel.app/#/)
+[![Animated GIF of Features](./assets/Screen_Recording_2025-04-10_120958.gif)](https://modernstaff-techhr-hub-99b636e5866484-sivuyilemtwetwes-projects.vercel.app/#/)
 
 A comprehensive HR management system built by [Your Student Name(s)] for efficient employee and organizational management. ModernTech HR Management System offers tools for managing employee records, attendance, payroll, and more.
 
